@@ -1,0 +1,4117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- ============== CSS STYLES ============== -->
+    <style>
+        /* ========== CSS VARIABLES ========== */
+        :root {
+            --sidebar-w: 260px;
+            --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card: rgba(255, 255, 255, 0.95);
+            --card-hover: rgba(255, 255, 255, 1);
+            --muted: #64748b;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --round: 20px;
+            --shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 25px 60px rgba(0, 0, 0, 0.12);
+            --glow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        /* ========== GLOBAL STYLES ========== */
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, sans-serif;
+            background: var(--bg);
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        /* ========== SIDEBAR STYLES ========== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar-w);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 30px 25px;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .logo .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 24px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .logo .icon:hover {
+            transform: scale(1.05);
+            box-shadow: var(--glow);
+        }
+
+        .menu {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: #64748b;
+            text-decoration: none;
+            border-radius: 16px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .menu-item:hover {
+            background: rgba(59, 130, 246, 0.08);
+            transform: translateX(4px);
+            color: var(--accent);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 20px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .avatar {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .avatar .circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #000;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ========== MAIN CONTENT STYLES ========== */
+        .main {
+            margin-left: var(--sidebar-w);
+            padding: 40px 60px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .main::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-w);
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #1e293b, #475569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 2px;
+        }
+
+        /* ========== TOP CARDS STYLES ========== */
+        .top-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 25px;
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 180px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+            background: var(--card-hover);
+        }
+
+        .card.big {
+            min-width: 200px;
+            min-height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card .label {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .card .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        /* ========== GAUGES STYLES ========== */
+        .gauges {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        .gwrap {
+            background: var(--card);
+            padding: 25px;
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gwrap::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .gwrap:hover::before {
+            opacity: 1;
+        }
+
+        .gwrap:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .gwrap.warning {
+            border: 2px solid var(--warning);
+            animation: pulseWarning 2s infinite;
+        }
+
+        .gwrap.danger {
+            border: 2px solid var(--danger);
+            animation: pulseDanger 1.5s infinite;
+        }
+
+        @keyframes pulseWarning {
+
+            0%,
+            100% {
+                box-shadow: var(--shadow);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            }
+        }
+
+        @keyframes pulseDanger {
+
+            0%,
+            100% {
+                box-shadow: var(--shadow);
+            }
+
+            50% {
+                box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+            }
+        }
+
+        .gwrap .label {
+            font-size: 16px;
+            color: var(--muted);
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .gwrap .val {
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 15px;
+            color: var(--accent);
+        }
+
+        /* ========== CHART PANEL STYLES ========== */
+        .panel {
+            background: var(--card);
+            padding: 30px;
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: var(--round) var(--round) 0 0;
+        }
+
+        .panel:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .panel h3 {
+            margin: 0 0 25px 0;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-area {
+            height: 400px;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.5);
+        }
+
+        /* ========== TOGGLE BUTTON STYLES ========== */
+        .toggle-btn {
+            position: absolute;
+            top: 30px;
+            right: -45px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            border: none;
+            border-radius: 0 16px 16px 0;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow);
+        }
+
+        .toggle-btn:hover {
+            background: linear-gradient(135deg, var(--accent-light), var(--accent));
+            transform: scale(1.1);
+            box-shadow: var(--glow);
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ========== SIDEBAR ANIMATIONS ========== */
+        .sidebar {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .main {
+            transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .main.expanded {
+            margin-left: 0;
+        }
+
+        /* ========== TOGGLE BUTTON ICON ANIMATION ========== */
+        .toggle-btn .icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed .toggle-btn .icon {
+            transform: rotate(180deg);
+        }
+
+        /* ========== PAGE STYLES ========== */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* ========== REPORTS STYLES ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--success), var(--warning));
+            border-radius: var(--round) var(--round) 0 0;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 15px 0;
+            color: var(--muted);
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .data-table {
+            background: var(--card);
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-top: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .data-table:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            padding: 25px 30px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .table-header h3 {
+            margin: 0;
+            color: #1e293b;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .data-table td {
+            color: #334155;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            padding: 25px;
+            background: var(--card);
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-item label {
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-item select,
+        .filter-item input {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .filter-item select:focus,
+        .filter-item input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .refresh-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* ========== ANIMATIONS ========== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            53%,
+            80%,
+            100% {
+                transform: translate3d(0, 0, 0);
+            }
+
+            40%,
+            43% {
+                transform: translate3d(0, -8px, 0);
+            }
+
+            70% {
+                transform: translate3d(0, -4px, 0);
+            }
+
+            90% {
+                transform: translate3d(0, -2px, 0);
+            }
+        }
+
+        .animate-on-load {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .pulse-effect {
+            animation: pulse 2s infinite;
+        }
+
+        /* ========== LOADING STATES ========== */
+        .loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ========== LOADING MESSAGE STYLES ========== */
+        .loading-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+            font-size: 16px;
+            font-weight: 500;
+            background: var(--card);
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* ========== TABLE LOADING STYLES ========== */
+        .table-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .table-loading-text {
+            margin-top: 15px;
+            color: var(--muted);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* ========== ENHANCED HOVER EFFECTS ========== */
+        .gwrap canvas:hover {
+            transform: scale(1.05);
+            transition: transform 0.3s ease;
+        }
+
+        .panel:hover .chart-area {
+            background: rgba(248, 250, 252, 0.8);
+        }
+
+        /* ========== NOTIFICATION STYLES ========== */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card);
+            padding: 20px 25px;
+            border-radius: var(--round);
+            box-shadow: var(--shadow-hover);
+            border-left: 5px solid var(--success);
+            z-index: 9999;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 350px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .notification.error {
+            border-left-color: var(--danger);
+        }
+
+        .notification .notification-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notification .notification-message {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .notification .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--muted);
+            padding: 5px;
+        }
+
+        /* ========== REFRESH INDICATOR STYLES ========== */
+        .refresh-indicator {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--card);
+            padding: 15px 20px;
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--muted);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-indicator:hover {
+            box-shadow: var(--shadow-hover);
+            transform: scale(1.05);
+        }
+
+        .refresh-indicator .refresh-icon {
+            font-size: 16px;
+            color: var(--accent);
+        }
+
+        .refresh-indicator.refreshing .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.inactive {
+            background: var(--muted);
+            animation: none;
+        }
+
+        /* ========== ANOMALY POPUP STYLES ========== */
+        .anomaly-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card);
+            padding: 30px;
+            border-radius: var(--round);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+            border: 3px solid var(--danger);
+            z-index: 10000;
+            max-width: 450px;
+            width: 90%;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .anomaly-popup.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+
+        .anomaly-popup::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            background: linear-gradient(45deg, var(--danger), #ff6b6b);
+            border-radius: var(--round);
+            z-index: -1;
+            animation: anomalyGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes anomalyGlow {
+            0% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .anomaly-popup .popup-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .anomaly-popup .popup-icon {
+            font-size: 48px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        .anomaly-popup .popup-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--danger);
+            margin: 0;
+        }
+
+        .anomaly-popup .popup-message {
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .anomaly-popup .popup-details {
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid var(--danger);
+            margin-bottom: 25px;
+        }
+
+        .anomaly-popup .popup-details strong {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .anomaly-popup .popup-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .anomaly-popup .popup-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .anomaly-popup .popup-btn.primary {
+            background: var(--danger);
+            color: white;
+        }
+
+        .anomaly-popup .popup-btn.primary:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .anomaly-popup .popup-btn.secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .anomaly-popup .popup-btn.secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .popup-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ========== ANOMALY STATUS INDICATOR ========== */
+        .anomaly-indicator {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            background: var(--danger);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: var(--shadow);
+            z-index: 1001;
+            display: none;
+            animation: pulseRed 1.5s ease-in-out infinite;
+            cursor: pointer;
+        }
+
+        .anomaly-indicator.active {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes pulseRed {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            50% {
+                box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* ========== RESPONSIVE STYLES ========== */
+        @media(max-width:980px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .top-cards {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .gauges {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .toggle-btn {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .filter-controls {
+                flex-direction: column;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            .chart-area {
+                height: 300px;
+            }
+        }
+
+        /* ========== NOTIFICATION PAGE STYLES ========== */
+        .notification-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .notification-summary-card {
+            background: var(--card);
+            border-radius: var(--round);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .notification-summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .summary-icon {
+            font-size: 32px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 15px;
+            color: white;
+        }
+
+        .summary-content h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .summary-count {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .notification-filter-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            padding: 25px;
+            background: var(--card);
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .notification-history {
+            background: var(--card);
+            border-radius: var(--round);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .notification-history-header {
+            padding: 25px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-history-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .history-stats {
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .notification-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 20px 25px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            background: #f8fafc;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-icon {
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .notification-icon.system {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .notification-icon.anomaly {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .notification-icon.warning {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .notification-icon.success {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .notification-icon.error {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .notification-time {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .notification-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .notification-badge.system {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .notification-badge.anomaly {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .notification-badge.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .notification-badge.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .notification-badge.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .notification-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .notification-status.acknowledged {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .notification-status.pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .empty-notifications {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-notifications-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ============== SIDEBAR SECTION ============== -->
+    <aside class="sidebar" id="sidebar">
+        <button class="toggle-btn" id="toggleSidebar" onclick="toggleSidebar()">
+            <span class="icon">☰</span>
+        </button>
+
+        <div class="logo">
+            <div class="icon">SL</div>
+            <div>
+                <div style="font-weight:700">Smart Lights</div>
+                <div style="font-size:13px;color:#7b8590">Powered</div>
+            </div>
+        </div>
+
+        <div class="menu" role="navigation">
+            <button type="button" class="menu-item active" data-page="dashboard" onclick="showPage('dashboard')">📊
+                Dashboard</button>
+            <button type="button" class="menu-item" data-page="reports" onclick="showPage('reports')">🔔
+                Reports</button>
+            <button type="button" class="menu-item" data-page="notifications" onclick="showPage('notifications')">🚨
+                Notifications</button>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <!-- <div class="avatar">
+            <div class="circle">U</div>
+            <div>
+                <div style="font-weight:700">USER</div>
+                <div style="font-size:12px; color:var(--muted)">Viewer</div>
+            </div>
+        </div> -->
+    </aside>
+
+    <!-- ============== NOTIFICATION SYSTEM ============== -->
+    <div id="notification" class="notification">
+        <button class="close-btn" onclick="hideNotification()">&times;</button>
+        <div class="notification-title" id="notificationTitle">
+            <span id="notificationIcon">🔄</span>
+            <span id="notificationTitleText">Data Updated</span>
+        </div>
+        <div class="notification-message" id="notificationMessage">
+            Dashboard has been updated with latest data from Google Sheet.
+        </div>
+    </div>
+
+    <!-- ============== REFRESH INDICATOR ============== -->
+    <div class="refresh-indicator" id="refreshIndicator">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="refresh-icon" id="refreshIcon">🔄</span>
+        <span id="refreshStatus">Auto-refresh: ON</span>
+        <span id="lastUpdate">Last: --:--</span>
+    </div>
+
+    <!-- ============== ANOMALY INDICATOR ============== -->
+    <div class="anomaly-indicator" id="anomalyIndicator" onclick="showAnomalyPopup()">
+        <span>🚨</span>
+        <span id="anomalyCount">Anomaly Detected</span>
+    </div>
+
+    <!-- ============== ANOMALY POPUP ============== -->
+    <div class="popup-overlay" id="popupOverlay" onclick="hideAnomalyPopup()"></div>
+    <div class="anomaly-popup" id="anomalyPopup">
+        <div class="popup-header">
+            <div class="popup-icon">🚨</div>
+            <div>
+                <h2 class="popup-title">System Anomaly Detected!</h2>
+            </div>
+        </div>
+
+        <div class="popup-message" id="anomalyMessage">
+            Abnormal conditions have been detected in the system. Please review the details below.
+        </div>
+
+        <div class="popup-details" id="anomalyDetails">
+            <strong>Anomaly Type:</strong> <span id="anomalyType">Unknown</span><br>
+            <strong>Detection Time:</strong> <span id="anomalyTime">--</span><br>
+            <strong>Affected Systems:</span> <span id="anomalySystems">--</span>
+        </div>
+
+        <div class="popup-actions">
+            <button class="popup-btn secondary" onclick="hideAnomalyPopup()">Dismiss</button>
+            <button class="popup-btn primary" onclick="acknowledgeAnomaly()">Acknowledge</button>
+        </div>
+    </div>
+
+    <!-- ============== MAIN CONTENT SECTION ============== -->
+    <main class="main">
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <div class="title">Dashboard</div>
+                <button class="refresh-btn" onclick="manualRefresh()">
+                    <span id="manualRefreshIcon">🔄</span> Manual Refresh
+                </button>
+            </div>
+
+            <div class="top-cards" id="topCards">
+                <!-- cards will be inserted here -->
+            </div>
+
+            <div class="gauges" id="gauges">
+                <!-- gauges inserted here -->
+            </div>
+
+            <!-- Combined Chart Controls -->
+            <div class="panel" style="margin-bottom: 20px; position: relative;">
+                <h3 style="display: flex; justify-content: space-between; align-items: center;">
+                    <button id="showInfoBtn" onclick="showInfoBanner()" 
+                            style="background: linear-gradient(135deg, #8b5cf6, #a855f7); color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: all 0.3s ease; display: none;"
+                            onmouseover="this.style.transform='scale(1.05)'" 
+                            onmouseout="this.style.transform='scale(1)'"
+                            title="Show chart controls help">
+                        ℹ️ Show Info
+                    </button>
+                </h3>
+
+                <!-- Combined Date Range Controls for All Charts -->
+                <div class="filter-controls" style="margin-bottom: 20px; padding: 20px;">
+                    <div class="filter-item">
+                        <label>From Date</label>
+                        <input type="date" id="allChartsFromDate" onchange="refreshAllCharts()">
+                    </div>
+
+                    <div class="filter-item">
+                        <label>To Date</label>
+                        <input type="date" id="allChartsToDate" onchange="refreshAllCharts()">
+                    </div>
+
+                    <div class="filter-item">
+                        <label>View Mode</label>
+                        <select id="allChartsViewMode" onchange="refreshAllCharts()">
+                            <option value="hourly">Hourly Average (24h)</option>
+                            <option value="daily">Daily Average</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Combined Info Banner (Auto-hide after 10 seconds) -->
+                <div id="chartControlsInfoBanner"
+                    style="background: linear-gradient(135deg, #f3e8ff, #faf5ff); padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #8b5cf6; position: relative; transition: all 0.5s ease-out;">
+                    <div style="font-size: 14px; color: #6b21a8; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px;">ℹ️</span>
+                        <div>
+                            <strong>Chart Controls:</strong> Charts will update automatically when you change the date range or view mode. 
+                            No need to click any update button!
+                            <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">
+                                • <strong>Hourly Mode:</strong> Shows 24-hour averages combining all days in the
+                                selected range<br>
+                                • <strong>Daily Mode:</strong> Shows individual daily averages for each day in the range
+                            </div>
+                        </div>
+                        <!-- Close button -->
+                        <button onclick="hideInfoBanner()" 
+                                style="background: none; border: none; color: #8b5cf6; cursor: pointer; font-size: 18px; margin-left: auto; padding: 5px; border-radius: 50%; transition: background-color 0.2s;"
+                                onmouseover="this.style.backgroundColor='rgba(139, 92, 246, 0.1)'" 
+                                onmouseout="this.style.backgroundColor='transparent'"
+                                title="Close">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Solar Voltage and Current Waveforms</h3>  <!-- เปลี่ยนจาก System เป็น Solar -->
+
+                <div class="chart-area">
+                    <canvas id="waveChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Solar Power-Time</h3>  <!-- เปลี่ยนจาก System เป็น Solar -->
+
+                <div class="chart-area">
+                    <canvas id="powerChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Solar Daily Energy-Time (Wh)</h3>
+
+                <div class="chart-area">
+                    <canvas id="energyChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Reports Page -->
+        <div id="reports-page" class="page">
+            <div class="title">Data Reports & Statistics</div>
+
+            <!-- Filter Controls -->
+            <div class="filter-controls">
+                <div class="filter-item">
+                    <label>Period</label>
+                    <select id="periodFilter">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label>From Date</label>
+                    <input type="date" id="fromDate">
+                </div>
+
+                <div class="filter-item">
+                    <label>To Date</label>
+                    <input type="date" id="toDate">
+                </div>
+
+                <div class="filter-item" style="justify-content: flex-end;">
+                    <button class="refresh-btn" onclick="refreshReports()">🔄 Refresh</button>
+                </div>
+            </div>
+
+            <!-- Data Tables -->
+            <div class="data-table">
+                <div class="table-header">
+                    <h3>📋 Recent Solar System Readings</h3>
+                </div>
+                <div class="table-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Temperature</th>
+                                <th>System Voltage</th>
+                                <th>System Current</th>
+                                <th>System Power</th>
+                                <th>LED Current</th>
+                                <th>Motion (PIR)</th>
+                                <th>LED Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <!-- Loading state - will be replaced by JavaScript -->
+                            <tr id="dataTableLoading">
+                                <td colspan="8" style="text-align: center; padding: 40px;">
+                                    <div class="table-loading">
+                                        <div class="loading-spinner"></div>
+                                        <div style="margin-top: 15px; color: #64748b; font-size: 16px;">
+                                            📊 Loading system readings...
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Page -->
+        <div id="notifications-page" class="page">
+            <div class="title">🔔 Notification History & Alerts</div>
+
+            <!-- Notification Summary Cards -->
+            <div class="notification-summary-grid">
+                <div class="notification-summary-card">
+                    <div class="summary-icon">🚨</div>
+                    <div class="summary-content">
+                        <h3>Anomaly Alerts</h3>
+                        <div class="summary-count" id="anomalyAlertCount">0</div>
+                        <div class="summary-label">Alerts Today</div>
+                    </div>
+                </div>
+
+                <div class="notification-summary-card">
+                    <div class="summary-icon">⚠️</div>
+                    <div class="summary-content">
+                        <h3>Warning Alerts</h3>
+                        <div class="summary-count" id="warningAlertCount">0</div>
+                        <div class="summary-label">Warnings Today</div>
+                    </div>
+                </div>
+
+                <div class="notification-summary-card">
+                    <div class="summary-icon">✅</div>
+                    <div class="summary-content">
+                        <h3>Success Messages</h3>
+                        <div class="summary-count" id="successMessageCount">0</div>
+                        <div class="summary-label">Success Today</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="notification-filter-controls">
+                <div class="filter-item">
+                    <label>Notification Type</label>
+                    <select id="notificationTypeFilter" onchange="filterNotifications()">
+                        <option value="all">All Types</option>
+                        <option value="anomaly">Anomaly Alerts</option>
+                        <option value="warning">Warning Alerts</option>
+                        <option value="success">Success Messages</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label>Time Period</label>
+                    <select id="notificationPeriodFilter" onchange="filterNotifications()">
+                        <option value="today">Today</option>
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <button class="refresh-btn" onclick="clearNotificationHistory()">🗑️ Clear History</button>
+                    <button class="refresh-btn" onclick="loadNotificationHistory()">🔄 Refresh</button>
+                </div>
+            </div>
+
+            <!-- Notification History List -->
+            <div class="notification-history">
+                <div class="notification-history-header">
+                    <h3>📝 Notification History</h3>
+                    <div class="history-stats">
+                        <span id="notificationCount">Loading notifications...</span>
+                    </div>
+                </div>
+
+                <div class="notification-list" id="notificationList">
+                    <!-- Notification items will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============== JAVASCRIPT SECTION ============== -->
+    <script>
+        // ========== SIDEBAR TOGGLE FUNCTION ==========
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.querySelector('.main');
+            const toggleBtn = document.getElementById('toggleSidebar');
+
+            // Add bounce animation to button
+            toggleBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                toggleBtn.style.transform = '';
+            }, 150);
+
+            // Toggle sidebar and main content
+            sidebar.classList.toggle('collapsed');
+            main.classList.toggle('expanded');
+
+            // Add subtle shake animation when opening
+            if (!sidebar.classList.contains('collapsed')) {
+                sidebar.style.animation = 'slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                setTimeout(() => {
+                    sidebar.style.animation = '';
+                }, 400);
+            }
+        }
+
+        // Add CSS animations via JavaScript
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                0% {
+                    transform: translateX(-100%);
+                    opacity: 0.8;
+                }
+                50% {
+                    transform: translateX(-5%);
+                }
+                100% {
+                    transform: translateX(0%);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes buttonPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+            
+            .sidebar .logo, .sidebar .menu, .sidebar .avatar {
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+            
+            .sidebar.collapsed .logo,
+            .sidebar.collapsed .menu,
+            .sidebar.collapsed .avatar {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ========== PAGE NAVIGATION FUNCTIONS ==========
+        function showPage(pageId) {
+            // Hide all pages
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // Show selected page
+            const targetPage = document.getElementById(pageId + '-page');
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+
+            // Update menu active state
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach(item => item.classList.remove('active'));
+
+            // Set active menu item based on data-page attribute (no href reliance)
+            const activeMenuItem = document.querySelector(`.menu-item[data-page="${pageId}"]`);
+            if (activeMenuItem) activeMenuItem.classList.add('active');
+
+            // If returning to dashboard, reload dashboard data
+            if (pageId === 'dashboard') {
+                loadDashboard();
+            }
+
+            // Load reports data if reports page is selected
+            if (pageId === 'reports') {
+                loadReportsData();
+            }
+
+            // Load notifications data if notifications page is selected
+            if (pageId === 'notifications') {
+                loadNotificationHistory();
+            }
+        }
+    </script>
+
+    <script>
+        // ========== SHEET COLUMN CONFIGURATION ==========
+        // อัพเดตชื่อคอลัมน์ให้ตรงกับ SmartLights.xlsx
+        const COL_TIMESTAMP = 'Timestamp';
+        const COL_TEMP = 'Temperature (°C)';
+        const COL_CLOUD = 'Cloudiness (%)';
+        const COL_SUNRISE = 'Sunrise';
+        const COL_SUNSET = 'Sunset';
+        const COL_LUXA = 'Lux_A (Control)';
+        const COL_LUXB = 'Lux_B (Monitor)';
+        const COL_VOLT = 'Solar_Voltage (V)';         // เปลี่ยนเป็น Solar_Voltage สำหรับชาร์ต
+        const COL_CURRENT = 'Solar_Current (A)';      // เปลี่ยนเป็น Solar_Current สำหรับชาร์ต
+        const COL_POWER = 'Solar_Power (W)';          // ใช้ Solar_Power สำหรับชาร์ต
+        const COL_ENERGY = 'Solar_Energy (kWh)';
+        const COL_MOTION = 'Motion (PIR)';
+        const COL_SYSTEM_VOLTAGE = 'System_Voltage (V)';
+        const COL_SYSTEM_CURRENT = 'System_Current (A)';
+        const COL_SYSTEM_POWER = 'System_Power (W)';
+        const COL_SYSTEM_ENERGY = 'System_Energy (kWh)';
+        const COL_RELAY = 'Relay Status';
+        const COL_BULB = 'Bulb Status (INA219)';
+        const COL_CURRENT_INA219 = 'INA219_Current (A)';
+        const COL_ANOMALY = 'Anomaly Status';
+        const COL_SOLAR_DAILY = 'Solar_Daily_Wh';
+        const COL_SYSTEM_DAILY = 'System_Daily_Wh';
+
+        // ========== GLOBAL VARIABLES ==========
+        let waveChart, powerChart, energyChart, luxChart, systemPowerChart, systemEnergyChart, gaugeVolt, gaugeCurrent, gaugePower;
+
+        // Auto-refresh system variables
+        let autoRefreshInterval;
+        let lastDataTimestamp = null;
+        let lastKnownRowCount = null; // Track row count for detecting new data
+        let isAutoRefreshEnabled = true;
+        let refreshIntervalSeconds = 30; // Check every 30 seconds
+
+        // Anomaly tracking variables
+        let currentAnomalies = [];
+        let acknowledgedAnomalies = new Set();
+        let lastAnomalyCheck = null;
+
+        // Notification history variables
+        let notificationHistory = [];
+        let filteredNotifications = [];
+        const MAX_NOTIFICATIONS = 1000; // Maximum notifications to keep in history
+
+        // ========== CREATE TOP CARDS FUNCTION ==========
+        function createTopCards(summary) {
+            const cont = document.getElementById('topCards');
+            cont.innerHTML = '';
+
+            // Date card
+            const d = new Date(summary.timestamp || Date.now());
+            const dateCard = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;"></div>
+                    <div style="text-align:center;">
+                        <div class="label">Date</div>
+                        <div class="value">${d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(dateCard);
+
+            // Time card
+            const timeCard = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;">🕒</div>
+                    <div style="text-align:center;">
+                        <div class="label">Time</div>
+                        <div class="value" id="clock">${d.toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(timeCard);
+
+            // Temperature
+            const tempCard = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;"></div>
+                    <div style="text-align:center;">
+                        <div class="label">Temperature</div>
+                        <div class="value">${summary.temperature !== undefined && summary.temperature !== '' ? summary.temperature + '°' : '—'}</div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(tempCard);
+
+            // Cloudiness
+            const cloudCard = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;">☁️</div>
+                    <div style="text-align:center;">
+                        <div class="label">Cloudiness</div>
+                        <div class="value">${summary.cloudiness !== undefined && summary.cloudiness !== '' ? summary.cloudiness + '%' : '—'}</div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(cloudCard);
+
+            // Sunrise
+            const sr = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;"></div>
+                    <div style="text-align:center;">
+                        <div class="label">Sunrise</div>
+                        <div class="value">${summary.sunrise || '—'}</div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(sr);
+
+            // Sunset
+            const ss = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;"></div>
+                    <div style="text-align:center;">
+                        <div class="label">Sunset</div>
+                        <div class="value">${summary.sunset || '—'}</div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(ss);
+
+            // Relay Status
+            const relay = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;"></div>
+                    <div style="text-align:center;">
+                        <div class="label">Relay Status</div>
+                        <div class="value" style="color: ${summary.relay === 'on' ? '#10b981' : '#ef4444'};">
+                            ${summary.relay ? summary.relay.toUpperCase() : 'OFF'}
+                        </div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(relay);
+
+            // Motion
+            const motion = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;">🚶</div>
+                    <div style="text-align:center;">
+                        <div class="label">Motion</div>
+                        <div class="value" style="color: ${summary.motion == '1' ? '#10b981' : '#6b7280'};">
+                            ${summary.motion !== undefined && summary.motion !== '' ? summary.motion : '0'}
+                        </div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(motion);
+
+            // ILLUMINANCE (Lux_A Control)
+            const illuminance = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;"></div>
+                    <div style="text-align:center;">
+                        <div class="label">ILLUMINANCE</div>
+                        <div class="value" style="color: #3b82f6;">
+                            ${summary.luxA !== undefined && summary.luxA !== '' ? summary.luxA + ' lx' : '—'}
+                        </div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(illuminance);
+
+            // ILLUMINANCEBULB (Lux_B Monitor)
+            const illuminanceBulb = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;"></div>
+                    <div style="text-align:center;">
+                        <div class="label">ILLUMINANCEBULB</div>
+                        <div class="value" style="color: #f59e0b;">
+                            ${summary.luxB !== undefined && summary.luxB !== '' ? summary.luxB + ' lx' : '—'}
+                        </div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(illuminanceBulb);
+
+            // Lux_B (Monitor) - Light Intensity Monitor
+            const luxB = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="font-size:28px;">�</div>
+                    <div style="text-align:center;">
+                        <div class="label">Light Monitor</div>
+                        <div class="value" style="color: #f59e0b;">
+                            ${summary.luxB !== undefined && summary.luxB !== '' ? summary.luxB + ' lx' : '—'}
+                        </div>
+                    </div>
+                </div>
+            `, 'big');
+            // cont.appendChild(luxB); // ลบ Light Monitor ออก
+
+            // Bulb status big
+            const bulb = makeCard(`
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="font-size:36px">💡</div>
+                    <div style="text-align:center">
+                        <div class="label">Bulb</div>
+                        <div class="value">${summary.bulb || '—'}</div>
+                    </div>
+                </div>
+            `, 'big');
+            cont.appendChild(bulb);
+
+            // Live clock update (update every second)
+            setInterval(() => {
+                const el = document.getElementById('clock');
+                if (el) el.textContent = new Date().toLocaleTimeString();
+            }, 1000);
+        }
+
+        // ========== MAKE CARD HELPER FUNCTION ==========
+        function makeCard(innerHTML, cls = '') {
+            const div = document.createElement('div');
+            div.className = 'card ' + cls;
+            div.innerHTML = innerHTML;
+            return div;
+        }
+
+        // ========== CREATE GAUGES FUNCTION ==========
+        function createGauges(summary) {
+            const cont = document.getElementById('gauges');
+            cont.innerHTML = '';
+
+            // Voltage gauge (Max 30V)
+            const gv = document.createElement('div');
+            gv.className = 'gwrap';
+            gv.innerHTML = `
+                <div class="label">Solar Voltage <span style="font-size:10px;opacity:0.7;">(Max: 30V)</span></div>
+                <canvas id="gVolt" width="120" height="120"></canvas>
+                <div class="val" id="vVal"></div>
+            `;
+            cont.appendChild(gv);
+
+            // Current gauge (Max 5A)
+            const gc = document.createElement('div');
+            gc.className = 'gwrap';
+            gc.innerHTML = `
+                <div class="label">Solar Current <span style="font-size:10px;opacity:0.7;">(Max: 5A)</span></div>
+                <canvas id="gCurr" width="120" height="120"></canvas>
+                <div class="val" id="cVal"></div>
+            `;
+            cont.appendChild(gc);
+
+            // Power gauge (Max 100W)
+            const gp = document.createElement('div');
+            gp.className = 'gwrap';
+            gp.innerHTML = `
+                <div class="label">Solar Power <span style="font-size:10px;opacity:0.7;">(Max: 100W)</span></div>
+                <canvas id="gPow" width="120" height="120"></canvas>
+                <div class="val" id="pVal"></div>
+            `;
+            cont.appendChild(gp);
+
+            // Current (INA219) gauge (Max 2A) - ใช้ System Voltage แทน
+            const gSystem = document.createElement('div');
+            gSystem.className = 'gwrap';
+            gSystem.innerHTML = `
+                <div class="label">System Voltage <span style="font-size:10px;opacity:0.7;">(Max: 15V)</span></div>
+                <canvas id="gSystemVolt" width="120" height="120"></canvas>
+                <div class="val" id="sysVoltVal"></div>
+            `;
+            cont.appendChild(gSystem);
+
+            // System Current gauge (Max 10A)
+            const gSysCurr = document.createElement('div');
+            gSysCurr.className = 'gwrap';
+            gSysCurr.innerHTML = `
+                <div class="label">System Current <span style="font-size:10px;opacity:0.7;">(Max: 10A)</span></div>
+                <canvas id="gSystemCurr" width="120" height="120"></canvas>
+                <div class="val" id="sysCurrVal"></div>
+            `;
+            cont.appendChild(gSysCurr);
+
+            // System Power gauge (Max 150W)
+            const gSysPow = document.createElement('div');
+            gSysPow.className = 'gwrap';
+            gSysPow.innerHTML = `
+                <div class="label">System Power <span style="font-size:10px;opacity:0.7;">(Max: 150W)</span></div>
+                <canvas id="gSystemPow" width="120" height="120"></canvas>
+                <div class="val" id="sysPowVal"></div>
+            `;
+            cont.appendChild(gSysPow);
+
+            // CURRENTLOAD gauge (INA219 Current Max 5A)
+            const gCurrentLoad = document.createElement('div');
+            gCurrentLoad.className = 'gwrap';
+            gCurrentLoad.innerHTML = `
+                <div class="label">CURRENTLOAD <span style="font-size:10px;opacity:0.7;">(Max: 5A)</span></div>
+                <canvas id="gCurrentLoad" width="120" height="120"></canvas>
+                <div class="val" id="currentLoadVal"></div>
+            `;
+            cont.appendChild(gCurrentLoad);
+
+            // Draw doughnut gauges using Chart.js with updated max values  
+            drawGauge('gVolt', Number(summary.voltage) || 0, 30, 'rgba(59,130,246,0.9)');        // Solar Voltage Max 30V
+            drawGauge('gCurr', Number(summary.current) || 0, 5, 'rgba(234,179,8,0.95)');         // Solar Current Max 5A
+            drawGauge('gPow', Number(summary.power) || 0, 100, 'rgba(239,68,68,0.95)');          // Solar Power Max 100W
+            drawGauge('gSystemVolt', Number(summary.systemVoltage) || 0, 15, 'rgba(168,85,247,0.95)'); // System Voltage Max 15V
+            drawGauge('gSystemCurr', Number(summary.systemCurrent) || 0, 10, 'rgba(34,197,94,0.95)'); // System Current Max 10A
+            drawGauge('gSystemPow', Number(summary.systemPower) || 0, 150, 'rgba(245,158,11,0.95)'); // System Power Max 150W
+            drawGauge('gCurrentLoad', Number(summary.currentINA219) || 0, 5, 'rgba(236,72,153,0.95)'); // Current Load Max 5A
+        }
+
+        // ========== DRAW GAUGE FUNCTION ==========
+        function drawGauge(canvasId, value, max, baseColor) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            // Calculate percentage and determine color based on usage
+            const percentage = (value / max) * 100;
+            let gaugeColor = baseColor;
+
+            // Change color based on usage percentage
+            if (percentage >= 90) {
+                gaugeColor = 'rgba(239,68,68,0.9)'; // Red for >90%
+            } else if (percentage >= 75) {
+                gaugeColor = 'rgba(245,158,11,0.9)'; // Orange for >75%
+            } else if (percentage >= 50) {
+                gaugeColor = 'rgba(34,197,94,0.9)'; // Green for >50%
+            }
+
+            const filled = Math.min(value, max);
+            const rest = Math.max(0, max - filled);
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [filled, rest],
+                        backgroundColor: [gaugeColor, '#eee'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    maintainAspectRatio: true
+                }
+            });
+
+            // Update the value display with percentage
+            let valueElementId;
+            if (canvasId === 'gVolt') valueElementId = 'vVal';
+            else if (canvasId === 'gCurr') valueElementId = 'cVal';
+            else if (canvasId === 'gPow') valueElementId = 'pVal';
+            else if (canvasId === 'gSystemVolt') valueElementId = 'sysVoltVal';
+            else if (canvasId === 'gSystemCurr') valueElementId = 'sysCurrVal';
+            else if (canvasId === 'gSystemPow') valueElementId = 'sysPowVal';
+            else if (canvasId === 'gCurrentLoad') valueElementId = 'currentLoadVal';
+
+            const valueElement = document.getElementById(valueElementId);
+            if (valueElement) {
+                const unit = canvasId.includes('Volt') ? 'V' :
+                    canvasId.includes('Pow') ? 'W' : 'A';
+
+                // Add warning classes to the gauge wrapper
+                const gaugeWrapper = valueElement.closest('.gwrap');
+                if (gaugeWrapper) {
+                    gaugeWrapper.classList.remove('warning', 'danger');
+                    if (percentage >= 90) {
+                        gaugeWrapper.classList.add('danger');
+                    } else if (percentage >= 75) {
+                        gaugeWrapper.classList.add('warning');
+                    }
+                }
+
+                valueElement.innerHTML = `
+                    <div style="font-weight: 700; font-size: 18px; color: ${percentage >= 90 ? '#ef4444' : percentage >= 75 ? '#f59e0b' : '#10b981'};">
+                        ${value || '—'}${value ? unit : ''}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.7; margin-top: 4px;">
+                        ${value ? percentage.toFixed(1) + '%' : ''}
+                    </div>
+                `;
+
+                // Show notification for dangerous levels
+                if (percentage >= 90) {
+                    showNotification(
+                        '⚠️ High Usage Alert!',
+                        `${canvasId.replace('g', '').replace('Curr', 'Current')} at ${percentage.toFixed(1)}% (${value}${unit})`,
+                        'error',
+                        '⚠️'
+                    );
+                }
+            }
+        }
+
+        // ========== DRAW WAVEFORM CHART FUNCTION ==========
+        // Draw waveform chart (Solar Voltage = yellow, Solar Current = red)
+        function drawWaveChart(series) {
+            const ctx = document.getElementById('waveChart').getContext('2d');
+            if (waveChart) waveChart.destroy();
+
+            // Determine chart title and x-axis label based on data
+            let chartTitle = 'Solar Voltage and Current Waveforms';  // เปลี่ยนจาก System เป็น Solar
+            let xAxisLabel = 'Time';
+
+            if (series.labels && series.labels.length > 0) {
+                // Check if labels are hourly (00:00 format) or daily
+                if (series.labels[0].includes(':')) {
+                    xAxisLabel = 'Time (Hour)';
+                    chartTitle = 'Hourly Average - Solar Voltage and Current';  // เปลี่ยนจาก System เป็น Solar
+                } else {
+                    xAxisLabel = 'Date';
+                    chartTitle = 'Daily Average - Solar Voltage and Current';   // เปลี่ยนจาก System เป็น Solar
+                }
+            }
+
+            waveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: series.labels,
+                    datasets: [
+                        {
+                            label: 'System Current (A)',
+                            data: series.current,
+                            borderColor: 'rgba(220,38,38,0.9)',
+                            backgroundColor: 'rgba(220,38,38,0.06)',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'System Voltage (V)',
+                            data: series.voltage,
+                            borderColor: 'rgba(234,179,8,0.95)',
+                            backgroundColor: 'rgba(234,179,8,0.06)',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: { size: 16, weight: 'bold' },
+                            color: '#1e293b'
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1e293b',
+                            bodyColor: '#475569',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: xAxisLabel,
+                                color: '#475569',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                drawBorder: true
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Current (A)',
+                                color: 'rgba(220,38,38,0.9)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(220,38,38,0.1)',
+                                drawBorder: true
+                            },
+                            ticks: {
+                                color: 'rgba(220,38,38,0.8)',
+                                font: { size: 11 }
+                            },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Voltage (V)',
+                                color: 'rgba(234,179,8,0.95)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                                color: 'rgba(234,179,8,0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(234,179,8,0.8)',
+                                font: { size: 11 }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // ========== DRAW POWER CHART FUNCTION ==========
+        function drawPowerChart(series) {
+            const ctx = document.getElementById('powerChart').getContext('2d');
+            if (powerChart) powerChart.destroy();
+
+            // Determine chart title and x-axis label based on data
+            let chartTitle = 'Solar Power-Time';  // เปลี่ยนจาก System เป็น Solar
+            let xAxisLabel = 'Time';
+
+            if (series.labels && series.labels.length > 0) {
+                if (series.labels[0].includes(':')) {
+                    xAxisLabel = 'Time (Hour)';
+                    chartTitle = 'Hourly Average - Solar Power';  // เปลี่ยนจาก System เป็น Solar
+                } else {
+                    xAxisLabel = 'Date';
+                    chartTitle = 'Daily Average - Solar Power';   // เปลี่ยนจาก System เป็น Solar
+                }
+            }
+
+            powerChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: series.labels,
+                    datasets: [
+                        {
+                            label: 'System Power (W)',
+                            data: series.power,
+                            borderColor: 'rgba(147,51,234,0.9)',
+                            backgroundColor: 'rgba(147,51,234,0.1)',
+                            tension: 0.4,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 2,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: { size: 16, weight: 'bold' },
+                            color: '#1e293b'
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1e293b',
+                            bodyColor: '#475569',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: xAxisLabel,
+                                color: '#475569',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                drawBorder: true
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Power (W)',
+                                color: 'rgba(147,51,234,0.9)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(147,51,234,0.1)',
+                                drawBorder: true
+                            },
+                            ticks: {
+                                color: 'rgba(147,51,234,0.8)',
+                                font: { size: 11 }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // ========== DRAW ENERGY CHART FUNCTION ==========
+        function drawEnergyChart(series) {
+            const ctx = document.getElementById('energyChart').getContext('2d');
+            if (energyChart) energyChart.destroy();
+
+            // Determine chart title and x-axis label based on data
+            let chartTitle = 'Solar Daily Energy-Time (Wh)';
+            let xAxisLabel = 'Time';
+
+            if (series.labels && series.labels.length > 0) {
+                if (series.labels[0].includes(':')) {
+                    xAxisLabel = 'Time (Hour)';
+                    chartTitle = 'Hourly Average - Solar Daily Energy';
+                } else {
+                    xAxisLabel = 'Date';
+                    chartTitle = 'Daily Average - Solar Daily Energy';
+                }
+            }
+
+            energyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: series.labels,
+                    datasets: [
+                        {
+                            label: 'Solar Daily Energy (Wh)',
+                            data: series.energy,
+                            borderColor: 'rgba(16,185,129,0.9)',
+                            backgroundColor: 'rgba(16,185,129,0.1)',
+                            tension: 0.4,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 2,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: { size: 16, weight: 'bold' },
+                            color: '#1e293b'
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1e293b',
+                            bodyColor: '#475569',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: xAxisLabel,
+                                color: '#475569',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                drawBorder: true
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Solar Daily Energy (Wh)',
+                                color: 'rgba(16,185,129,0.9)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(16,185,129,0.1)',
+                                drawBorder: true
+                            },
+                            ticks: {
+                                color: 'rgba(16,185,129,0.8)',
+                                font: { size: 11 }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // ========== DRAW LUX CHART FUNCTION ==========
+        function drawLuxChart(series) {
+            const ctx = document.getElementById('luxChart').getContext('2d');
+            if (luxChart) luxChart.destroy();
+
+            luxChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: series.labels,
+                    datasets: [
+                        {
+                            label: 'Lux A',
+                            data: series.luxA,
+                            borderColor: 'rgba(34,197,94,0.9)',
+                            backgroundColor: 'rgba(34,197,94,0.06)',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            fill: true,
+                            pointBackgroundColor: 'rgba(34,197,94,0.9)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: { display: true, text: 'Time (hour)' }
+                        },
+                        y: {
+                            display: true,
+                            title: { display: true, text: 'Illuminance Lux A (lx)' },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ========== DRAW SYSTEM POWER CHART FUNCTION ==========
+        function drawSystemPowerChart(series) {
+            const ctx = document.getElementById('systemPowerChart').getContext('2d');
+            if (systemPowerChart) systemPowerChart.destroy();
+
+            systemPowerChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: series.labels,
+                    datasets: [
+                        {
+                            label: 'System Power (W)',
+                            data: series.systemPower,
+                            borderColor: 'rgba(34,197,94,0.9)',
+                            backgroundColor: 'rgba(34,197,94,0.06)',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: { display: true, text: 'Time (hour)' }
+                        },
+                        y: {
+                            display: true,
+                            title: { display: true, text: 'System Power (W)' },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // ========== DRAW SYSTEM ENERGY CHART FUNCTION ==========
+        function drawSystemEnergyChart(series) {
+            const ctx = document.getElementById('systemEnergyChart').getContext('2d');
+            if (systemEnergyChart) systemEnergyChart.destroy();
+
+            systemEnergyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: series.labels,
+                    datasets: [
+                        {
+                            label: 'System Energy (kWh)',
+                            data: series.systemEnergy,
+                            borderColor: 'rgba(245,158,11,0.9)',
+                            backgroundColor: 'rgba(245,158,11,0.06)',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: { display: true, text: 'Time (hour)' }
+                        },
+                        y: {
+                            display: true,
+                            title: { display: true, text: 'System Energy (kWh)' },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // ========== LOAD DASHBOARD FUNCTION ==========
+        // Fetch and render summary + chart data
+        function loadDashboard() {
+            // Add loading state to cards and gauges
+            const topCards = document.getElementById('topCards');
+            const gauges = document.getElementById('gauges');
+
+            if (topCards) topCards.innerHTML = '<div class="loading-message">Loading dashboard data...</div>';
+            if (gauges) gauges.innerHTML = '<div class="loading-message">Loading gauges...</div>';
+
+            // Load summary data
+            google.script.run
+                .withSuccessHandler(summary => {
+                    console.log('✅ Dashboard summary loaded:', summary);
+                    createTopCards(summary || {});
+                    createGauges(summary || {});
+
+                    // Check for anomalies
+                    checkAnomalyStatus(summary || {});
+
+                    // Add animation to loaded elements
+                    setTimeout(() => {
+                        const cards = document.querySelectorAll('.card');
+                        cards.forEach((card, index) => {
+                            card.style.animationDelay = (index * 0.1) + 's';
+                            card.classList.add('animate-on-load');
+                        });
+                    }, 100);
+                })
+                .withFailureHandler(error => {
+                    console.error('❌ Failed to load dashboard summary:', error);
+                    showNotification(
+                        'Error Loading Dashboard',
+                        'Failed to load dashboard data: ' + error.message,
+                        'error',
+                        '❌'
+                    );
+
+                    // Show error message in cards area
+                    if (topCards) {
+                        topCards.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">Error loading dashboard data. Please refresh.</div>';
+                    }
+                    if (gauges) {
+                        gauges.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">Error loading gauge data. Please refresh.</div>';
+                    }
+                })
+                .getLatestSummary();
+
+            // Get full sheet data for chart grouping
+            google.script.run
+                .withSuccessHandler(data => {
+                    console.log('✅ Sheet data loaded for charts:', data ? data.length : 0, 'rows');
+
+                    if (!data || !data.length) {
+                        console.warn('No sheet data for chart');
+                        drawWaveChart({ labels: [], voltage: [], current: [] });
+                        drawPowerChart({ labels: [], power: [] });
+                        drawEnergyChart({ labels: [], energy: [] });
+                        return;
+                    }
+
+                    // Group by hour 0..24
+                    const groups = {};
+                    for (let i = 0; i < 24; i++) {
+                        groups[i] = {
+                            volt: [], curr: [], power: [], energy: [], luxA: [], luxB: [], motion: [],
+                            currentINA219: [], systemPower: [], systemEnergy: []
+                        };
+                    }
+
+                    data.forEach(row => {
+                        const raw = row[COL_TIMESTAMP] || row['Timestamp'] || row['timestamp'];
+                        const d = parseTimestamp(raw);
+                        if (!d) return;
+
+                        const h = d.getHours();
+                        const v = parseFloat(row[COL_VOLT]);
+                        const c = parseFloat(row[COL_CURRENT]);
+                        const p = parseFloat(row[COL_POWER]);
+                        const e = parseFloat(row[COL_SOLAR_DAILY]); // เปลี่ยนเป็น Solar_Daily_Wh
+                        const la = parseFloat(row[COL_LUXA]);
+                        const lb = parseFloat(row[COL_LUXB]);
+                        const m = parseFloat(row[COL_MOTION]);
+                        const cINA219 = parseFloat(row[COL_CURRENT_INA219]);
+                        const sysPow = parseFloat(row[COL_SYSTEM_POWER]);
+                        const sysEng = parseFloat(row[COL_SYSTEM_ENERGY]);
+
+                        if (!isNaN(v)) groups[h].volt.push(v);
+                        if (!isNaN(c)) groups[h].curr.push(c);
+                        if (!isNaN(sysPow)) groups[h].power.push(sysPow);
+                        if (!isNaN(e)) groups[h].energy.push(e);
+                        if (!isNaN(la)) groups[h].luxA.push(la);
+                        if (!isNaN(lb)) groups[h].luxB.push(lb);
+                        if (!isNaN(m)) groups[h].motion.push(m);
+                        if (!isNaN(cINA219)) groups[h].currentINA219.push(cINA219);
+                        if (!isNaN(sysPow)) groups[h].systemPower.push(sysPow);
+                        if (!isNaN(sysEng)) groups[h].systemEnergy.push(sysEng);
+                    });
+
+                    const labels = [];
+                    const volArr = [], curArr = [], powArr = [], engArr = [], luxAArr = [], luxBArr = [];
+                    const sysPowArr = [], sysEngArr = [];
+
+                    for (let h = 0; h < 24; h++) {
+                        labels.push(String(h).padStart(2, '0') + ':00');
+                        const va = groups[h].volt;
+                        const ca = groups[h].curr;
+                        const pa = groups[h].power;
+                        const ea = groups[h].energy;
+                        const laa = groups[h].luxA;
+                        const lba = groups[h].luxB;
+                        const spa = groups[h].systemPower;
+                        const sea = groups[h].systemEnergy;
+
+                        volArr.push(va.length ? (va.reduce((s, x) => s + x, 0) / va.length) : 0);
+                        curArr.push(ca.length ? (ca.reduce((s, x) => s + x, 0) / ca.length) : 0);
+                        powArr.push(pa.length ? (pa.reduce((s, x) => s + x, 0) / pa.length) : 0);
+                        engArr.push(ea.length ? (ea.reduce((s, x) => s + x, 0) / ea.length) : 0);
+                        luxAArr.push(laa.length ? (laa.reduce((s, x) => s + x, 0) / laa.length) : 0);
+                        luxBArr.push(lba.length ? (lba.reduce((s, x) => s + x, 0) / lba.length) : 0);
+                        sysPowArr.push(spa.length ? (spa.reduce((s, x) => s + x, 0) / spa.length) : 0);
+                        sysEngArr.push(sea.length ? (sea.reduce((s, x) => s + x, 0) / sea.length) : 0);
+                    }
+
+                    console.log('📊 Drawing charts with data points:', {
+                        voltage: volArr.filter(v => v > 0).length,
+                        current: curArr.filter(v => v > 0).length,
+                        power: powArr.filter(v => v > 0).length,
+                        energy: engArr.filter(v => v > 0).length
+                    });
+
+                    drawWaveChart({ labels, voltage: volArr, current: curArr });
+                    drawPowerChart({ labels, power: powArr });
+                    drawEnergyChart({ labels, energy: engArr });
+                    // drawSystemEnergyChart({ labels, systemEnergy: sysEngArr }); // ลบออก
+                })
+                .withFailureHandler(error => {
+                    console.error('❌ Failed to load sheet data for charts:', error);
+                    showNotification(
+                        'Error Loading Charts',
+                        'Failed to load chart data: ' + error.message,
+                        'error',
+                        '📊'
+                    );
+
+                    // Draw empty charts
+                    drawWaveChart({ labels: [], voltage: [], current: [] });
+                    drawPowerChart({ labels: [], power: [] });
+                    drawEnergyChart({ labels: [], energy: [] });
+                })
+                .getSheetData();
+        }
+
+        // ========== HELPER FUNCTIONS ==========
+        function setStatus(text) {
+            const el = document.getElementById('status');
+            if (!el) {
+                /* optional */
+            }
+        }
+
+        // ========== PARSE TIMESTAMP FUNCTION ==========
+        // Parse timestamp flexible (same approach as server)
+        function parseTimestamp(v) {
+            if (!v) return null;
+            if (v instanceof Date) return v;
+
+            const s = String(v).trim();
+            const d1 = new Date(s);
+            if (!isNaN(d1.getTime())) return d1;
+
+            let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{2}):?(\d{0,2})?)?/);
+            if (m) {
+                const p1 = Number(m[1]), p2 = Number(m[2]), yyyy = Number(m[3]);
+                let month, day;
+
+                if (p1 > 12) {
+                    day = p1;
+                    month = p2 - 1;
+                } else {
+                    month = p1 - 1;
+                    day = p2;
+                }
+
+                const hh = m[4] ? Number(m[4]) : 0;
+                const mi = m[5] ? Number(m[5]) : 0;
+                const ss = m[6] ? Number(m[6]) : 0;
+
+                return new Date(yyyy, month, day, hh, mi, ss);
+            }
+
+            m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (m) {
+                const dd = Number(m[1]), mm = Number(m[2]) - 1, yyyy = Number(m[3]);
+                return new Date(yyyy, mm, dd);
+            }
+
+            return null;
+        }
+
+        // ========== REPORTS FUNCTIONS ==========
+        let reportsData = [];
+
+        function loadReportsData() {
+            // Show loading state for table
+            const tbody = document.getElementById('dataTableBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr id="dataTableLoading">
+                        <td colspan="8" style="text-align: center; padding: 40px;">
+                            <div class="table-loading">
+                                <div class="loading-spinner"></div>
+                                <div style="margin-top: 15px; color: #64748b; font-size: 16px;">
+                                    📊 Loading system readings...
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            google.script.run
+                .withSuccessHandler(data => {
+                    updateReportsData(data);
+                    // Remove loading class and add animation
+                    statElements.forEach((id, index) => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.classList.remove('loading');
+                            setTimeout(() => {
+                                element.classList.add('animate-on-load');
+                            }, index * 100);
+                        }
+                    });
+                })
+                .withFailureHandler(err => {
+                    console.error('Error loading reports data:', err);
+
+                    // Show error state in table
+                    const tbody = document.getElementById('dataTableBody');
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
+                                    <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.6;">❌</div>
+                                    <div>Error loading data: ${err.message || 'Unknown error'}</div>
+                                    <button onclick="loadReportsData()" style="margin-top: 15px; padding: 8px 16px; border: none; border-radius: 8px; background: var(--accent); color: white; cursor: pointer;">
+                                        🔄 Retry
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                })
+                .getSheetData();
+        }
+
+        function updateReportsData(data) {
+            if (!data || data.length === 0) return;
+
+            reportsData = data;
+
+            // Calculate statistics
+            const temperatures = data.map(row => parseFloat(row[COL_TEMP])).filter(val => !isNaN(val));
+            const powers = data.map(row => parseFloat(row[COL_POWER])).filter(val => !isNaN(val));
+            const energies = data.map(row => parseFloat(row[COL_ENERGY])).filter(val => !isNaN(val));
+            const voltages = data.map(row => parseFloat(row[COL_VOLT])).filter(val => !isNaN(val));
+            const currents = data.map(row => parseFloat(row[COL_CURRENT])).filter(val => !isNaN(val));
+            const motions = data.map(row => row[COL_MOTION]).filter(val => val === 'Motion Detected');
+
+            // Update data table
+            updateDataTable(data.slice(-50)); // Show last 50 records
+        }
+
+        function updateDataTable(data) {
+            const tbody = document.getElementById('dataTableBody');
+
+            // Remove loading state
+            const loadingRow = document.getElementById('dataTableLoading');
+            if (loadingRow) {
+                loadingRow.remove();
+            }
+
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                // Show empty state if no data
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--muted);">
+                        <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.6;">📊</div>
+                        <div>No data available</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                return;
+            }
+
+            data.reverse().forEach(row => {
+                const tr = document.createElement('tr');
+
+                const timestamp = new Date(row[COL_TIMESTAMP]);
+                const formattedTime = timestamp.toLocaleString();
+
+                tr.innerHTML = `
+                    <td>${formattedTime}</td>
+                    <td>${row[COL_TEMP] || '--'}°C</td>
+                    <td>${row[COL_SYSTEM_VOLTAGE] || '--'}V</td>
+                    <td>${row[COL_SYSTEM_CURRENT] || '--'}A</td>
+                    <td>${row[COL_SYSTEM_POWER] || '--'}W</td>
+                    <td>${row[COL_CURRENT_INA219] || '--'}A</td>
+                    <td>${row[COL_MOTION] === 'Motion Detected' ? '🟢' : '🔴'}</td>
+                    <td>${row[COL_BULB] === 'ON' ? '🟢 ON' : '🔴 OFF'}</td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function refreshReports() {
+            loadReportsData();
+        }
+
+        // Initialize date filters to current date
+        function initializeDateFilters() {
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const weekAgoString = weekAgo.toISOString().split('T')[0];
+
+            // Reports page date filters
+            const fromDateEl = document.getElementById('fromDate');
+            const toDateEl = document.getElementById('toDate');
+            if (fromDateEl) fromDateEl.value = weekAgoString;
+            if (toDateEl) toDateEl.value = todayString;
+
+            // Combined chart date filters - default to today
+            const allChartsFromDate = document.getElementById('allChartsFromDate');
+            const allChartsToDate = document.getElementById('allChartsToDate');
+            if (allChartsFromDate) allChartsFromDate.value = todayString;
+            if (allChartsToDate) allChartsToDate.value = todayString;
+        }
+
+        // ========== CHART DATE FILTER FUNCTIONS ==========
+
+        // Refresh all charts with combined controls
+        function refreshAllCharts() {
+            const fromDate = document.getElementById('allChartsFromDate').value;
+            const toDate = document.getElementById('allChartsToDate').value;
+            const viewMode = document.getElementById('allChartsViewMode').value;
+
+            if (!fromDate || !toDate) {
+                showNotification(
+                    'Date Range Required ⚠️',
+                    'Please select both From Date and To Date for all charts.',
+                    'warning',
+                    '⚠️'
+                );
+                return;
+            }
+
+            if (new Date(fromDate) > new Date(toDate)) {
+                showNotification(
+                    'Invalid Date Range ❌',
+                    'From Date must be earlier than or equal to To Date.',
+                    'error',
+                    '❌'
+                );
+                return;
+            }
+
+            console.log('🔄 Refreshing all charts with date range:', fromDate, 'to', toDate, 'Mode:', viewMode);
+
+            // Show loading message
+            showNotification(
+                'Loading All Charts 🔄',
+                `Loading data from ${fromDate} to ${toDate} for all charts...`,
+                'success',
+                '🔄'
+            );
+
+            // Get filtered sheet data once and use for all charts
+            google.script.run
+                .withSuccessHandler(data => {
+                    console.log('✅ Filtered data loaded for all charts:', data ? data.length : 0, 'rows');
+
+                    // Process data for all three charts
+                    processAllChartsData(data, viewMode, fromDate, toDate);
+                })
+                .withFailureHandler(error => {
+                    console.error('❌ Failed to load filtered data for charts:', error);
+                    showNotification(
+                        'Error Loading Charts Data ❌',
+                        'Failed to load charts data: ' + error.message,
+                        'error',
+                        '❌'
+                    );
+                    // Draw empty charts on error
+                    const emptyData = { labels: [], voltage: [], current: [], power: [], energy: [] };
+                    drawWaveChart(emptyData);
+                    drawPowerChart(emptyData);
+                    drawEnergyChart(emptyData);
+                })
+                .getFilteredSheetData(fromDate, toDate);
+        }
+
+        // Process data for all charts at once
+        function processAllChartsData(data, viewMode, fromDate, toDate) {
+            if (!data || !data.length) {
+                console.warn('No data for selected date range');
+                showNotification(
+                    'No Data Found 📊',
+                    'No data found for the selected date range.',
+                    'warning',
+                    '📊'
+                );
+                const emptyData = { labels: [], voltage: [], current: [], power: [], energy: [] };
+                drawWaveChart(emptyData);
+                drawPowerChart(emptyData);
+                drawEnergyChart(emptyData);
+                return;
+            }
+
+            let labels = [];
+            let volArr = [], curArr = [], powArr = [], engArr = [];
+
+            if (viewMode === 'hourly') {
+                // Hourly average for the date range (aggregate all days into 24 hours)
+                const groups = {};
+                for (let i = 0; i < 24; i++) {
+                    groups[i] = { volt: [], curr: [], power: [], energy: [] };
+                }
+
+                data.forEach(row => {
+                    const raw = row[COL_TIMESTAMP] || row['Timestamp'] || row['timestamp'];
+                    const d = parseTimestamp(raw);
+                    if (!d) return;
+
+                    const h = d.getHours();
+                    const v = parseFloat(row[COL_VOLT] || row['Solar_Voltage (V)']);     // ใช้ Solar_Voltage
+                    const c = parseFloat(row[COL_CURRENT] || row['Solar_Current (A)']);  // ใช้ Solar_Current  
+                    const p = parseFloat(row[COL_POWER] || row['Solar_Power (W)']);      // ใช้ Solar_Power
+                    const e = parseFloat(row[COL_SOLAR_DAILY] || row['Solar_Daily_Wh']);
+
+                    if (!isNaN(v)) groups[h].volt.push(v);
+                    if (!isNaN(c)) groups[h].curr.push(c);
+                    if (!isNaN(p)) groups[h].power.push(p);
+                    if (!isNaN(e)) groups[h].energy.push(e);
+                });
+
+                for (let h = 0; h < 24; h++) {
+                    labels.push(String(h).padStart(2, '0') + ':00');
+                    const va = groups[h].volt;
+                    const ca = groups[h].curr;
+                    const pa = groups[h].power;
+                    const ea = groups[h].energy;
+
+                    volArr.push(va.length ? (va.reduce((s, x) => s + x, 0) / va.length) : 0);
+                    curArr.push(ca.length ? (ca.reduce((s, x) => s + x, 0) / ca.length) : 0);
+                    powArr.push(pa.length ? (pa.reduce((s, x) => s + x, 0) / pa.length) : 0);
+                    engArr.push(ea.length ? (ea.reduce((s, x) => s + x, 0) / ea.length) : 0);
+                }
+
+            } else if (viewMode === 'daily') {
+                // Daily average - group by date
+                const dailyGroups = {};
+
+                data.forEach(row => {
+                    const raw = row[COL_TIMESTAMP] || row['Timestamp'] || row['timestamp'];
+                    const d = parseTimestamp(raw);
+                    if (!d) return;
+
+                    const dateKey = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                    if (!dailyGroups[dateKey]) {
+                        dailyGroups[dateKey] = { volt: [], curr: [], power: [], energy: [] };
+                    }
+
+                    const v = parseFloat(row[COL_VOLT] || row['Solar_Voltage (V)']);      // ใช้ Solar_Voltage
+                    const c = parseFloat(row[COL_CURRENT] || row['Solar_Current (A)']);   // ใช้ Solar_Current
+                    const p = parseFloat(row[COL_POWER] || row['Solar_Power (W)']);       // ใช้ Solar_Power
+                    const e = parseFloat(row[COL_SOLAR_DAILY] || row['Solar_Daily_Wh']);
+
+                    if (!isNaN(v)) dailyGroups[dateKey].volt.push(v);
+                    if (!isNaN(c)) dailyGroups[dateKey].curr.push(c);
+                    if (!isNaN(p)) dailyGroups[dateKey].power.push(p);
+                    if (!isNaN(e)) dailyGroups[dateKey].energy.push(e);
+                });
+
+                // Sort dates and create arrays
+                const sortedDates = Object.keys(dailyGroups).sort();
+                sortedDates.forEach(dateKey => {
+                    const displayDate = new Date(dateKey).toLocaleDateString('th-TH', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    labels.push(displayDate);
+
+                    const va = dailyGroups[dateKey].volt;
+                    const ca = dailyGroups[dateKey].curr;
+                    const pa = dailyGroups[dateKey].power;
+                    const ea = dailyGroups[dateKey].energy;
+
+                    volArr.push(va.length ? (va.reduce((s, x) => s + x, 0) / va.length) : 0);
+                    curArr.push(ca.length ? (ca.reduce((s, x) => s + x, 0) / ca.length) : 0);
+                    powArr.push(pa.length ? (pa.reduce((s, x) => s + x, 0) / pa.length) : 0);
+                    engArr.push(ea.length ? (ea.reduce((s, x) => s + x, 0) / ea.length) : 0);
+                });
+            }
+
+            console.log('📊 Drawing all charts with processed data:', {
+                mode: viewMode,
+                points: labels.length,
+                voltage: volArr.filter(v => v > 0).length,
+                current: curArr.filter(v => v > 0).length,
+                power: powArr.filter(v => v > 0).length,
+                energy: engArr.filter(v => v > 0).length
+            });
+
+            // Draw all three charts
+            drawWaveChart({ labels, voltage: volArr, current: curArr });
+            drawPowerChart({ labels, power: powArr });
+            drawEnergyChart({ labels, energy: engArr });
+
+            // Show success notification
+            showNotification(
+                'All Charts Updated ✅',
+                `All charts updated with ${labels.length} data points in ${viewMode} view.`,
+                'success',
+                '📊'
+            );
+        }
+
+        // Keep individual chart refresh functions for backward compatibility
+        function refreshWaveChart() {
+            refreshAllCharts(); // Redirect to combined function
+        }
+
+        function refreshPowerChart() {
+            refreshAllCharts(); // Redirect to combined function
+        }
+
+        function refreshEnergyChart() {
+            refreshAllCharts(); // Redirect to combined function
+        }
+
+        // ========== NOTIFICATION FUNCTIONS ==========
+
+        function loadNotificationHistory() {
+            console.log('📥 Loading notification history from Sheet2...');
+
+            // แสดงข้อความ loading
+            const listContainer = document.getElementById('notificationList');
+            if (listContainer) {
+                listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Loading notifications...</div>';
+            }
+
+            // ดึงข้อมูลจาก Google Sheet2
+            google.script.run
+                .withSuccessHandler((data) => {
+                    console.log('✅ Notification history loaded:', data.length, 'notifications');
+                    notificationHistory = data || [];
+                    updateNotificationSummary();
+                    filterNotifications();
+
+                    // แสดง notification ว่าโหลดสำเร็จ
+                    showNotification(
+                        'Notifications Loaded ✅',
+                        `Loaded ${notificationHistory.length} notification records from Sheet2`,
+                        'success',
+                        '📥'
+                    );
+                })
+                .withFailureHandler((error) => {
+                    console.error('❌ Failed to load notification history:', error);
+
+                    // แสดงข้อผิดพลาด
+                    if (listContainer) {
+                        listContainer.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: #ef4444;">
+                                <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                                <h3>Error Loading Notifications</h3>
+                                <p>Failed to load notification data from Sheet2</p>
+                                <p style="font-size: 12px; color: #666;">${error.message || error}</p>
+                                <button onclick="loadNotificationHistory()" style="margin-top: 15px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Retry</button>
+                            </div>
+                        `;
+                    }
+
+                    showNotification(
+                        'Error Loading Notifications ❌',
+                        'Failed to load notification data: ' + (error.message || error),
+                        'error',
+                        '❌'
+                    );
+                })
+                .getNotificationHistory();
+        }
+
+        function updateNotificationSummary() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // กรองข้อมูลเฉพาะวันนี้
+            const todayNotifications = notificationHistory.filter(notification => {
+                const notifDate = new Date(notification.Timestamp || notification.timestamp);
+                notifDate.setHours(0, 0, 0, 0);
+                return notifDate.getTime() === today.getTime();
+            });
+
+            // นับจำนวนตามประเภทที่สำคัญเท่านั้น
+            const anomalyCount = todayNotifications.filter(n =>
+                (n.Type || n.type || '').toLowerCase() === 'anomaly'
+            ).length;
+
+            const warningCount = todayNotifications.filter(n =>
+                (n.Type || n.type || '').toLowerCase() === 'warning'
+            ).length;
+
+            const successCount = todayNotifications.filter(n =>
+                (n.Type || n.type || '').toLowerCase() === 'success'
+            ).length;
+
+            // อัพเดท summary cards (ลบ systemUpdateCount ออก)
+            const anomalyAlertEl = document.getElementById('anomalyAlertCount');
+            const warningAlertEl = document.getElementById('warningAlertCount');
+            const successMessageEl = document.getElementById('successMessageCount');
+
+            if (anomalyAlertEl) anomalyAlertEl.textContent = anomalyCount;
+            if (warningAlertEl) warningAlertEl.textContent = warningCount;
+            if (successMessageEl) successMessageEl.textContent = successCount;
+
+            console.log('📊 Notification summary updated (Anomaly, Warning, Success only):', {
+                total: notificationHistory.length,
+                today: todayNotifications.length,
+                anomaly: anomalyCount,
+                warning: warningCount,
+                success: successCount
+            });
+        }
+
+        function filterNotifications() {
+            const typeFilter = document.getElementById('notificationTypeFilter');
+            const periodFilter = document.getElementById('notificationPeriodFilter');
+
+            let filtered = [...notificationHistory];
+
+            // กรองตามประเภท
+            if (typeFilter && typeFilter.value !== 'all') {
+                const filterType = typeFilter.value;
+                filtered = filtered.filter(notification => {
+                    const notifType = (notification.Type || notification.type || '').toLowerCase();
+                    return notifType === filterType;
+                });
+            }
+
+            // กรองตามช่วงเวลา
+            if (periodFilter && periodFilter.value !== 'all') {
+                const period = periodFilter.value;
+                const now = new Date();
+                let cutoffTime;
+
+                switch (period) {
+                    case 'today':
+                        cutoffTime = new Date(now);
+                        cutoffTime.setHours(0, 0, 0, 0);
+                        break;
+                    case '24h':
+                        cutoffTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                        break;
+                    case '7d':
+                        cutoffTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case '30d':
+                        cutoffTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        break;
+                }
+
+                if (cutoffTime) {
+                    filtered = filtered.filter(notification => {
+                        const notifDate = new Date(notification.Timestamp || notification.timestamp);
+                        return notifDate >= cutoffTime;
+                    });
+                }
+            }
+
+            filteredNotifications = filtered;
+            renderNotificationList();
+        }
+
+        function renderNotificationList() {
+            const listContainer = document.getElementById('notificationList');
+            const countElement = document.getElementById('notificationCount');
+
+            if (!listContainer) {
+                console.warn('Notification list container not found');
+                return;
+            }
+
+            if (filteredNotifications.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #64748b;">
+                        <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.6;">📭</div>
+                        <h3 style="margin: 0 0 10px 0; color: #1e293b;">No notifications found</h3>
+                        <p style="margin: 0; font-size: 14px;">No notifications match your current filters.</p>
+                    </div>
+                `;
+
+                if (countElement) {
+                    countElement.textContent = 'No notifications found';
+                }
+                return;
+            }
+
+            if (countElement) {
+                countElement.textContent = `Showing ${filteredNotifications.length} notification${filteredNotifications.length !== 1 ? 's' : ''}`;
+            }
+
+            // สร้าง HTML สำหรับแสดงรายการ notifications
+            listContainer.innerHTML = filteredNotifications.map(notification => {
+                const timestamp = new Date(notification.Timestamp || notification.timestamp);
+                const timeString = timestamp.toLocaleString('th-TH', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
+                const title = notification.Title || notification.title || 'No Title';
+                const message = notification.Message || notification.message || 'No Message';
+                const type = (notification.Type || notification.type || 'system').toLowerCase();
+                const icon = notification.Icon || notification.icon || '🔔';
+                const acknowledged = notification.Acknowledged || notification.acknowledged || 'No';
+
+                return `
+                    <div class="notification-item">
+                        <div class="notification-icon ${type}">
+                            ${icon}
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">${title}</div>
+                            <div class="notification-message">${message}</div>
+                            <div class="notification-time">${timeString}</div>
+                        </div>
+                        <div class="notification-badge ${type}">
+                            ${type.toUpperCase()}
+                        </div>
+                        <div class="notification-status ${acknowledged === 'Yes' ? 'acknowledged' : 'pending'}">
+                            ${acknowledged === 'Yes' ? '✅' : '⏳'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            console.log('📋 Rendered', filteredNotifications.length, 'notifications');
+        }
+
+        function clearNotificationHistory() {
+            if (confirm('คุณต้องการลบประวัติการแจ้งเตือนทั้งหมดจาก Sheet2 หรือไม่?\\n\\nการดำเนินการนี้ไม่สามารถยกเลิกได้')) {
+                google.script.run
+                    .withSuccessHandler((result) => {
+                        console.log('✅ Notification history cleared:', result);
+
+                        // ล้างข้อมูลในหน้าเว็บ
+                        notificationHistory = [];
+                        filteredNotifications = [];
+                        updateNotificationSummary();
+                        renderNotificationList();
+
+                        showNotification(
+                            'History Cleared ✅',
+                            'All notification history has been cleared from Sheet2',
+                            'success',
+                            '🗑️'
+                        );
+                    })
+                    .withFailureHandler((error) => {
+                        console.error('❌ Failed to clear notification history:', error);
+                        showNotification(
+                            'Clear Failed ❌',
+                            'Failed to clear notification history: ' + (error.message || error),
+                            'error',
+                            '❌'
+                        );
+                    })
+                    .clearNotificationSheet();
+            }
+        }
+
+        function showNotification(title, message, type = 'success', icon = '🔄') {
+            const notification = document.getElementById('notification');
+            const titleText = document.getElementById('notificationTitleText');
+            const messageText = document.getElementById('notificationMessage');
+            const iconElement = document.getElementById('notificationIcon');
+
+            titleText.textContent = title;
+            messageText.textContent = message;
+            iconElement.textContent = icon;
+
+            // Set notification type
+            notification.classList.remove('error');
+            if (type === 'error') {
+                notification.classList.add('error');
+            }
+
+            notification.classList.add('show');
+
+            // สร้างข้อมูลการแจ้งเตือนสำหรับบันทึกลง Sheet2 (เฉพาะประเภทที่ต้องการ)
+            const importantTypes = ['anomaly', 'warning', 'success'];
+
+            if (importantTypes.includes(type.toLowerCase())) {
+                const notificationData = {
+                    id: Date.now() + Math.random(), // สร้าง ID เฉพาะ
+                    title: title,
+                    message: message,
+                    type: type,
+                    icon: icon,
+                    timestamp: new Date().toISOString(),
+                    acknowledged: false
+                };
+
+                // บันทึกการแจ้งเตือนลง Google Sheet2
+                console.log('💾 Saving important notification to Sheet2:', notificationData);
+                google.script.run
+                    .withSuccessHandler((result) => {
+                        console.log('✅ Notification saved to Sheet2 successfully:', result);
+                        console.log('Sheet2 row number:', result.rowNumber);
+                    })
+                    .withFailureHandler((error) => {
+                        console.error('❌ Failed to save notification to Sheet2:', error);
+                        console.error('Error details:', error);
+                    })
+                    .saveNotificationToSheet(notificationData);
+            } else {
+                console.log('ℹ️ Skipping notification save (type not in important list):', type, '- Only saving: anomaly, warning, success');
+            }
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                hideNotification();
+            }, 5000);
+        }
+
+        function hideNotification() {
+            const notification = document.getElementById('notification');
+            notification.classList.remove('show');
+        }
+
+        // ========== AUTO-REFRESH FUNCTIONS ==========
+        function updateRefreshIndicator(status, isRefreshing = false) {
+            const indicator = document.getElementById('refreshIndicator');
+            const statusDot = document.getElementById('statusDot');
+            const refreshIcon = document.getElementById('refreshIcon');
+            const refreshStatus = document.getElementById('refreshStatus');
+            const lastUpdate = document.getElementById('lastUpdate');
+
+            if (isRefreshing) {
+                indicator.classList.add('refreshing');
+                refreshStatus.textContent = 'Checking for updates...';
+                statusDot.classList.remove('inactive');
+            } else {
+                indicator.classList.remove('refreshing');
+
+                // Show interval only (no row count)
+                const intervalText = isAutoRefreshEnabled ? ` ${refreshIntervalSeconds}s` : '';
+                refreshStatus.textContent = isAutoRefreshEnabled ?
+                    `Auto-refresh: ON${intervalText}` :
+                    `Auto-refresh: OFF`;
+
+                statusDot.classList.toggle('inactive', !isAutoRefreshEnabled);
+            }
+
+            // Update last update time
+            const now = new Date();
+            lastUpdate.textContent = `Last: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        function checkForNewData() {
+            if (!isAutoRefreshEnabled) return;
+
+            updateRefreshIndicator('Checking...', true);
+
+            // Use new real-time status function
+            google.script.run
+                .withSuccessHandler(realTimeStatus => {
+                    updateRefreshIndicator('Updated', false);
+
+                    if (realTimeStatus && realTimeStatus.status === 'online') {
+                        const currentRowCount = realTimeStatus.currentRowCount;
+                        const isDataFresh = realTimeStatus.isDataFresh;
+                        const minutesSince = realTimeStatus.minutesSinceLastUpdate;
+
+                        // Store last known row count if first time
+                        if (lastKnownRowCount === null) {
+                            lastKnownRowCount = currentRowCount;
+                            console.log('🎯 Initial row count set:', currentRowCount);
+                        }
+
+                        // Check if there are new rows
+                        if (currentRowCount > lastKnownRowCount) {
+                            const newRows = currentRowCount - lastKnownRowCount;
+                            lastKnownRowCount = currentRowCount;
+
+                            // Show notification for new data
+                            showNotification(
+                                'New Data Available! 📊',
+                                `${newRows} new record${newRows > 1 ? 's' : ''} detected in Google Sheet`,
+                                'success',
+                                '✨'
+                            );
+
+                            // Refresh dashboard if currently viewing dashboard
+                            const currentPage = document.querySelector('.page.active');
+                            if (currentPage && currentPage.id === 'dashboard-page') {
+                                console.log('🔄 Refreshing dashboard with new data...');
+                                loadDashboard();
+                            }
+
+                            // Also refresh reports page if active
+                            if (currentPage && currentPage.id === 'reports-page') {
+                                console.log('🔄 Refreshing reports with new data...');
+                                loadReportsData();
+                            }
+                        }
+
+                        // Show warning if data is not fresh (but limit notifications)
+                        if (!isDataFresh && minutesSince > 15) {
+                            console.warn('⚠️ Data may be stale:', minutesSince, 'minutes since last update');
+
+                            // Only show notification for very stale data, and limit frequency
+                            const shouldShowNotification = (
+                                minutesSince > 60 && // Only for data older than 1 hour
+                                (
+                                    minutesSince > 180 || // Always show for 3+ hours
+                                    !window.lastStaleDataNotification || // First time
+                                    (Date.now() - window.lastStaleDataNotification) > 1800000 // 30 minutes since last notification
+                                )
+                            );
+
+                            if (shouldShowNotification) {
+                                window.lastStaleDataNotification = Date.now();
+                                showNotification(
+                                    'Data Warning ⚠️',
+                                    `Data appears stale - last update was ${Math.floor(minutesSince / 60)} hours ${minutesSince % 60} minutes ago`,
+                                    'warning',
+                                    '⚠️'
+                                );
+                            }
+                        }
+
+                        console.log('📊 Real-time status:', {
+                            currentRows: currentRowCount,
+                            lastKnown: lastKnownRowCount,
+                            isDataFresh: isDataFresh,
+                            minutesSinceUpdate: minutesSince
+                        });
+
+                    } else {
+                        console.error('❌ Real-time status check failed:', realTimeStatus.error);
+                    }
+
+                    // Also check for latest summary to detect anomalies
+                    google.script.run
+                        .withSuccessHandler(summary => {
+                            if (summary && summary.timestamp) {
+                                checkAnomalyStatus(summary);
+
+                                const currentTimestamp = new Date(summary.timestamp).getTime();
+                                if (lastDataTimestamp !== currentTimestamp) {
+                                    lastDataTimestamp = currentTimestamp;
+                                }
+                            }
+                        })
+                        .withFailureHandler(error => {
+                            console.error('Failed to get latest summary for anomaly check:', error);
+                        })
+                        .getLatestSummary();
+
+                })
+                .withFailureHandler(error => {
+                    updateRefreshIndicator('Error', false);
+                    console.error('Real-time status check error:', error);
+                    showNotification(
+                        'Connection Error ⚠️',
+                        'Unable to check real-time status. Will retry automatically.',
+                        'error',
+                        '⚠️'
+                    );
+                })
+                .getRealTimeStatus();
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+
+            // Check immediately, then every interval
+            checkForNewData();
+
+            autoRefreshInterval = setInterval(() => {
+                checkForNewData();
+            }, refreshIntervalSeconds * 1000);
+
+            console.log(`Auto-refresh started: checking every ${refreshIntervalSeconds} seconds`);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            updateRefreshIndicator('Stopped', false);
+            console.log('Auto-refresh stopped');
+        }
+
+        function toggleAutoRefresh() {
+            isAutoRefreshEnabled = !isAutoRefreshEnabled;
+
+            if (isAutoRefreshEnabled) {
+                startAutoRefresh();
+                showNotification(
+                    'Auto-refresh Enabled ✅',
+                    `Dashboard will check for updates every ${refreshIntervalSeconds} seconds.`,
+                    'success',
+                    '🔄'
+                );
+            } else {
+                stopAutoRefresh();
+                showNotification(
+                    'Auto-refresh Disabled ⏸️',
+                    'Automatic updates have been paused. Click refresh indicator to re-enable.',
+                    'success',
+                    '⏸️'
+                );
+            }
+        }
+
+        function adjustRefreshInterval() {
+            const intervals = [15, 30, 60, 120, 300]; // 15s, 30s, 1m, 2m, 5m
+            const currentIndex = intervals.indexOf(refreshIntervalSeconds);
+            const nextIndex = (currentIndex + 1) % intervals.length;
+            refreshIntervalSeconds = intervals[nextIndex];
+
+            if (isAutoRefreshEnabled) {
+                startAutoRefresh(); // Restart with new interval
+            }
+
+            showNotification(
+                'Refresh Interval Changed ⏱️',
+                `Auto-refresh interval set to ${refreshIntervalSeconds} seconds`,
+                'success',
+                '⏱️'
+            );
+        }
+
+        function manualRefresh() {
+            const icon = document.getElementById('manualRefreshIcon');
+            icon.style.animation = 'spin 1s linear infinite';
+
+            showNotification(
+                'Manual Refresh 🔄',
+                'Checking for latest data...',
+                'success',
+                '🔄'
+            );
+
+            // Force refresh regardless of auto-refresh state
+            const currentPage = document.querySelector('.page.active');
+            if (currentPage && currentPage.id === 'dashboard-page') {
+                loadDashboard();
+            } else if (currentPage && currentPage.id === 'reports-page') {
+                loadReportsData();
+            }
+
+            // Also check for new data to update timestamp
+            checkForNewData();
+
+            setTimeout(() => {
+                icon.style.animation = '';
+            }, 1000);
+        }
+
+        // ========== ANOMALY DETECTION FUNCTIONS ==========
+        function checkAnomalyStatus(summary) {
+            const timestamp = new Date(summary.timestamp || Date.now());
+
+            // Check for anomalies in the data - only from sheet, no calculation
+            const anomalyStatus = summary.anomaly || summary.anomalyStatus || '';
+
+            // Clear current anomalies first
+            currentAnomalies = [];
+
+            // Only process if there's an actual anomaly status from sheet and it's not normal
+            const normalStatuses = [
+                'normal', 'ปกติ', 'ok', 'good', 'fine', 'stable', 'none', '',
+                'no anomaly', 'ไม่มีปัญหา', 'all clear', 'clear', 'safe',
+                'no problem', 'no issue', 'operational', 'working'
+            ];
+            const isNormalStatus = !anomalyStatus ||
+                normalStatuses.some(status =>
+                    anomalyStatus.toLowerCase().trim() === status.toLowerCase()
+                );
+
+            if (anomalyStatus && !isNormalStatus) {
+
+                const anomalyId = `anomaly_${timestamp.getTime()}`;
+
+                // Check if this anomaly was already acknowledged
+                if (!acknowledgedAnomalies.has(anomalyId)) {
+                    const newAnomaly = {
+                        id: anomalyId,
+                        type: anomalyStatus,
+                        timestamp: timestamp,
+                        systems: ['System Status'], // Simple system reference
+                        severity: getAnomalySeverity(anomalyStatus),
+                        acknowledged: false,
+                        rawData: anomalyStatus // Keep original data
+                    };
+
+                    currentAnomalies.push(newAnomaly);
+
+                    // Show popup for any anomaly (not just critical)
+                    if (!lastAnomalyCheck || timestamp > lastAnomalyCheck) {
+                        showAnomalyPopup(newAnomaly);
+                    }
+                }
+            } else {
+                // If status is normal, hide any existing popup and clear anomalies
+                hideAnomalyPopup();
+                currentAnomalies = [];
+            }
+
+            updateAnomalyIndicator();
+            lastAnomalyCheck = timestamp;
+        }
+
+
+
+        function getAffectedSystems(summary) {
+            // Simple system reference - not calculated from other parameters
+            return ['System Status Monitor'];
+        }
+
+        function getAnomalySeverity(status) {
+            const criticalKeywords = ['critical', 'emergency', 'fault', 'error', 'failure'];
+            const warningKeywords = ['warning', 'caution', 'high', 'low', 'abnormal'];
+
+            const statusLower = status.toLowerCase();
+
+            if (criticalKeywords.some(keyword => statusLower.includes(keyword))) {
+                return 'critical';
+            } else if (warningKeywords.some(keyword => statusLower.includes(keyword))) {
+                return 'warning';
+            }
+            return 'info';
+        }
+
+        function updateAnomalyIndicator() {
+            const indicator = document.getElementById('anomalyIndicator');
+            const countElement = document.getElementById('anomalyCount');
+
+            if (!indicator || !countElement) return; // Safety check
+
+            if (currentAnomalies.length > 0) {
+                indicator.classList.add('active');
+                countElement.textContent = `${currentAnomalies.length} Anomal${currentAnomalies.length === 1 ? 'y' : 'ies'}`;
+            } else {
+                indicator.classList.remove('active');
+                countElement.textContent = 'No Anomaly';
+            }
+        }
+
+        function showAnomalyPopup(anomaly = null) {
+            // Don't show popup if no anomalies or if called without anomaly and no current anomalies
+            if (!anomaly && currentAnomalies.length === 0) {
+                return;
+            }
+
+            const popup = document.getElementById('anomalyPopup');
+            const overlay = document.getElementById('popupOverlay');
+            const messageElement = document.getElementById('anomalyMessage');
+            const typeElement = document.getElementById('anomalyType');
+            const timeElement = document.getElementById('anomalyTime');
+            const systemsElement = document.getElementById('anomalySystems');
+
+            if (anomaly) {
+                // Show message based on severity
+                const severityText = anomaly.severity === 'critical' ? 'Critical' :
+                    anomaly.severity === 'warning' ? 'Warning' : 'Info';
+                messageElement.textContent = `${severityText} system status detected from Google Sheet data.`;
+
+                // Display the exact anomaly status from sheet
+                typeElement.textContent = anomaly.rawData || anomaly.type || 'Unknown Status';
+                timeElement.textContent = anomaly.timestamp.toLocaleString();
+                systemsElement.textContent = 'Google Sheet - Anomaly Status Column';
+
+            } else if (currentAnomalies.length > 0) {
+                const latestAnomaly = currentAnomalies[currentAnomalies.length - 1];
+                messageElement.textContent = `${currentAnomalies.length} anomal${currentAnomalies.length === 1 ? 'y' : 'ies'} detected from sheet data.`;
+                typeElement.textContent = latestAnomaly.rawData || latestAnomaly.type || 'Unknown Status';
+                timeElement.textContent = latestAnomaly.timestamp.toLocaleString();
+                systemsElement.textContent = 'Google Sheet - Anomaly Status';
+
+            } else {
+                messageElement.textContent = 'No current anomalies detected in Google Sheet.';
+                typeElement.textContent = 'Normal';
+                timeElement.textContent = 'N/A';
+                systemsElement.textContent = 'All systems normal';
+            }
+
+            // Show overlay and popup with proper pointer events
+            if (overlay) {
+                overlay.classList.add('show');
+                overlay.style.pointerEvents = 'auto';
+            }
+
+            if (popup) {
+                popup.classList.add('show');
+                popup.style.pointerEvents = 'auto';
+            }
+
+            // Play alert sound (if allowed by browser)
+            if (anomaly && anomaly.severity === 'critical') {
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+LyvmccDjiR1/LNeSsFJHfH8N2QQAoUXrPp66hVFApGnt/yvmccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yvmccDzuP1fPNeSsFJHfH8N2QQAoUXrPp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGnt/yv2ccDzuP1fPNeSsFJHfH8N2QQAoUXrTp66hVFApGn==');
+                    audio.play().catch(() => { }); // Ignore if audio fails
+                } catch (e) { }
+            }
+        }
+
+        function hideAnomalyPopup() {
+            const popup = document.getElementById('anomalyPopup');
+            const overlay = document.getElementById('popupOverlay');
+
+            // Remove show classes to hide popup and overlay
+            if (overlay) {
+                overlay.classList.remove('show');
+                // Ensure pointer events are disabled
+                overlay.style.pointerEvents = 'none';
+            }
+
+            if (popup) {
+                popup.classList.remove('show');
+                // Ensure pointer events are disabled
+                popup.style.pointerEvents = 'none';
+            }
+
+            // Force reflow to ensure changes are applied
+            if (overlay) overlay.offsetHeight;
+            if (popup) popup.offsetHeight;
+        }
+
+        function acknowledgeAnomaly() {
+            // Mark all current anomalies as acknowledged
+            currentAnomalies.forEach(anomaly => {
+                acknowledgedAnomalies.add(anomaly.id);
+            });
+
+            // Clear current anomalies and update indicator
+            currentAnomalies = [];
+            updateAnomalyIndicator();
+
+            // Hide popup
+            hideAnomalyPopup();
+
+            // Show confirmation
+            showNotification(
+                'Anomaly Acknowledged ✅',
+                'All current anomalies have been acknowledged.',
+                'success',
+                '✅'
+            );
+        }
+
+        // ========== INFO BANNER FUNCTIONS ==========
+        function hideInfoBanner() {
+            const banner = document.getElementById('chartControlsInfoBanner');
+            const showBtn = document.getElementById('showInfoBtn');
+            
+            if (banner) {
+                banner.style.opacity = '0';
+                banner.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                    // Show the "Show Info" button after banner is hidden
+                    if (showBtn) {
+                        showBtn.style.display = 'inline-block';
+                        showBtn.style.opacity = '0';
+                        showBtn.style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            showBtn.style.opacity = '1';
+                            showBtn.style.transform = 'scale(1)';
+                        }, 100);
+                    }
+                }, 500);
+            }
+        }
+
+        function showInfoBanner() {
+            const banner = document.getElementById('chartControlsInfoBanner');
+            const showBtn = document.getElementById('showInfoBtn');
+            
+            if (banner) {
+                // Hide the show button first
+                if (showBtn) {
+                    showBtn.style.opacity = '0';
+                    showBtn.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        showBtn.style.display = 'none';
+                    }, 200);
+                }
+                
+                // Show the banner
+                setTimeout(() => {
+                    banner.style.display = 'block';
+                    banner.style.opacity = '0';
+                    banner.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        banner.style.opacity = '1';
+                        banner.style.transform = 'translateY(0)';
+                    }, 100);
+                    
+                    // Auto-hide again after 10 seconds
+                    autoHideInfoBanner();
+                }, 200);
+            }
+        }
+
+        function autoHideInfoBanner() {
+            // Auto-hide banner after 10 seconds
+            setTimeout(() => {
+                const banner = document.getElementById('chartControlsInfoBanner');
+                if (banner && banner.style.display !== 'none') {
+                    hideInfoBanner();
+                }
+            }, 10000); // 10 seconds
+        }
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DOM Content Loaded - Starting Dashboard...');
+
+            // Initialize dashboard
+            loadDashboard();
+            initializeDateFilters();
+
+            // Auto-hide info banner after 10 seconds
+            autoHideInfoBanner();
+
+            // Initialize charts with default date range after a short delay
+            setTimeout(() => {
+                refreshAllCharts(); // Use combined function instead of individual ones
+            }, 2000);
+
+            // Initialize row count for first time
+            google.script.run
+                .withSuccessHandler(status => {
+                    if (status && status.currentRowCount) {
+                        lastKnownRowCount = status.currentRowCount;
+                        console.log('🎯 Initial row count set:', lastKnownRowCount);
+                        updateRefreshIndicator('Initialized', false);
+                    }
+                })
+                .withFailureHandler(error => {
+                    console.error('Failed to get initial row count:', error);
+                })
+                .getRealTimeStatus();
+
+            // Start auto-refresh after initial load
+            setTimeout(() => {
+                startAutoRefresh();
+                showNotification(
+                    'Dashboard Ready! 🚀',
+                    'Real-time monitoring system is now active.',
+                    'success',
+                    '🚀'
+                );
+            }, 3000);
+
+            console.log('✅ Dashboard initialization completed');
+
+            // Add ESC key handler for closing popups
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                    const overlay = document.getElementById('popupOverlay');
+                    if (overlay && overlay.classList.contains('show')) {
+                        hideAnomalyPopup();
+                    }
+                }
+            });
+
+            // Prevent clicks inside popup from closing it
+            const popup = document.getElementById('anomalyPopup');
+            if (popup) {
+                popup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            }
+
+            // Add click handler to refresh indicator for manual toggle
+            const refreshIndicatorEl = document.getElementById('refreshIndicator');
+            refreshIndicatorEl.addEventListener('click', toggleAutoRefresh);
+            refreshIndicatorEl.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                adjustRefreshInterval();
+            });
+            refreshIndicatorEl.title = 'Left-click: Toggle auto-refresh\nRight-click: Change interval';
+        });
+    </script>
+</body>
+
+</html>
