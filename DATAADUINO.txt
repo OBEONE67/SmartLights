@@ -1,0 +1,393 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <BH1750FVI.h>
+#include <Wire.h>
+#include <ModbusMaster.h>
+#include <Adafruit_INA219.h>
+#include <time.h>
+
+//WiFi
+const char* ssid = "Tenda_5656B8";
+const char* password = "gain5283";
+// สภาพอากาศ
+const String weatherURL = "http://api.openweathermap.org/data/2.5/weather";
+const String city = "thanyaburi";
+const String apiKey = "112cb8172ae9d02dbc5686ff6f40f825";
+//Google Sheets
+const char* sheetScriptURL = "https://script.google.com/macros/s/AKfycbxhKf_s3XiZnl0m8X7SaaXqmBwHrBW0OaKQGVtK9DoTnjV4UvgOw6PTJqQo4R3_c3ivIw/exec";
+
+//เซนเซอร์แสงฺBH1750FVI
+BH1750FVI LightSensor_A(BH1750FVI::k_DevModeContLowRes);
+BH1750FVI LightSensor_B(0, BH1750FVI::k_DevAddress_H, BH1750FVI::k_DevModeContLowRes); 
+
+// PIR Motion Sensor & Relay 
+const int motionPin = 19;
+const int relayPin = 12;
+bool isRelayOn = false;
+const uint16_t LUX_THRESHOLD = 20;
+
+// ตัวแปรหน่วงเวลาถูกลบออกไปแล้ว
+unsigned long lastMotionTime = 0; 
+
+//PZEM 1 (Solar Energy)
+HardwareSerial PZEMSerial(1);
+ModbusMaster solarNode;
+uint8_t pzemSlaveAddr = 0x01;
+float SolarVoltage = NAN, SolarCurrent = NAN, SolarPower = NAN, SolarEnergy = NAN;
+//PZEM 2 (System Energy)
+HardwareSerial PZEMSerial2(2);
+ModbusMaster systemNode;
+uint8_t pzemSlaveAddr2 = 0x02;
+float SystemVoltage = NAN, SystemCurrent = NAN, SystemPower = NAN, SystemEnergy = NAN; 
+
+unsigned long startMillisPZEM = 0;
+const unsigned long periodPZEM = 1000;
+
+// INA219 Sensor 
+Adafruit_INA219 ina219;
+float INABusVoltage = NAN, INACurrent = NAN, INAPower = NAN, INAShuntVoltage = NAN;
+float INALoadVoltage = NAN;
+const int INA_SDA = 21;
+const int INA_SCL = 22;
+
+// สถานะหลอดไฟ ON/OFF
+const float INA_BULB_CURRENT_THRESHOLD = 0.05; // 50 mA
+
+// ===== Timers =====
+unsigned long lastSheetLogMillis = 0;
+const unsigned long sheetLogPeriod = 30000;
+unsigned long lastSerialPrintMillis = 0;
+const unsigned long serialPrintPeriod = 1000;
+
+// พลังงานสะสมรายวันจาก Solar Power (PZEM 1)
+float solarDailyWh = 0;
+float systemDailyWh = 0;
+unsigned long lastMillis = 0;
+
+// ตัวแปรสำหรับจับเวลา NTP และควบคุมการรีเซ็ต
+int lastResetDay = -1;
+const char* ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 7 * 3600;
+const int daylightOffset_sec = 0;
+
+// ข้อมูลสภาพอากาศ
+float temperature = 0;
+int cloudiness = 0;
+String sunriseThai = "", sunsetThai = "";
+String relayStatusText = "OFF";
+String bulbStatusText = "OFF";
+String anomalyStatusText = "ปกติ";
+
+// Reference / anomaly detection params
+const float REF_CURRENT_A = 1.0; 
+const float REF_LUX_B = 17000.0; 
+const float REF_RATIO = REF_LUX_B / REF_CURRENT_A; // 17000.0
+const float RATIO_TOLERANCE_PERCENT = 30.0;
+const float MIN_ALLOWED_RATIO = REF_RATIO * (1.0 - RATIO_TOLERANCE_PERCENT / 100.0); // 11900.0
+const float MAX_ALLOWED_RATIO = REF_RATIO * (1.0 + RATIO_TOLERANCE_PERCENT / 100.0); // 22100.0
+const float CURRENT_HIGH_THRESHOLD_A = REF_CURRENT_A * 1.5; // 1.5 A
+const float LUX_ZERO_THRESHOLD = 10.0;
+
+// ===== Wi-Fi Connect =====
+void connectToWiFi() {
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.print("Connecting to WiFi...");
+        WiFi.begin(ssid, password);
+        unsigned long startTime = millis();
+        while (WiFi.status() != WL_CONNECTED && millis() - startTime < 10000) {
+            delay(500);
+            Serial.print(".");
+        }
+        if (WiFi.status() == WL_CONNECTED)
+            Serial.println("\nWiFi Connected.");
+        else
+            Serial.println("\nWiFi Failed.");
+    }
+}
+
+// ===== Convert Unix Time to Thai Time =====
+String convertUnixTimeToThaiTime(unsigned long unixTimeUTC) {
+    unixTimeUTC += 25200;
+    int hour = (unixTimeUTC % 86400L) / 3600;
+    int minute = (unixTimeUTC % 3600) / 60;
+    int second = unixTimeUTC % 60;
+    char timeStr[9];
+    sprintf(timeStr, "%02d:%02d:%02d", hour, minute, second);
+    return String(timeStr);
+}
+
+// ===== URL Encode =====
+String urlencode(const String& str) {
+    String encoded = "";
+    char c, code0, code1;
+    for (int i = 0; i < str.length(); i++) {
+        c = str.charAt(i);
+        if (isalnum(c)) encoded += c;
+        else if (c == ' ') encoded += '+';
+        else {
+            code1 = (c & 0xf) + '0'; if ((c & 0xf) > 9) code1 = (c & 0xf) - 10 + 'A';
+            code0 = ((c >> 4) & 0xf) + '0'; if (((c >> 4) & 0xf) > 9) code0 = ((c >> 4) & 0xf) - 10 + 'A';
+            encoded += '%'; encoded += code0; encoded += code1;
+        }
+    }
+    return encoded;
+}
+
+//ตรวจสอบหลอดผิดปกติ
+String checkLoadAnomaly(float currentA, uint16_t luxB) {
+    if (isnan(currentA)) {
+        return "ผิดปกติ: ไม่สามารถอ่านกระแสได้";
+    }
+    if (currentA < INA_BULB_CURRENT_THRESHOLD) {
+        if (isRelayOn && luxB < LUX_ZERO_THRESHOLD) {
+            return "ผิดปกติ: หลอดไฟขาด/วงจรเปิด";
+        }
+        return "ปกติ";
+    }
+    if (currentA >= CURRENT_HIGH_THRESHOLD_A && luxB < LUX_ZERO_THRESHOLD) {
+        return "ผิดปกติ: ลัดวงจร/วงจรขับเสีย";
+    }
+    float actual_ratio = (float)luxB / currentA; 
+    if (actual_ratio < MIN_ALLOWED_RATIO) {
+        return "ผิดปกติ: หลอดไฟเสื่อมสภาพ (Eff. < 80%)";
+    } 
+    else if (actual_ratio > MAX_ALLOWED_RATIO) {
+        return "ผิดปกติ: เซนเซอร์/การจ่ายไฟผิดปกติ";
+    }
+    return "ปกติ";
+}
+// ตรวจสอบและรีเซ็ตพลังงานรายวัน (Dual PZEM Reset)
+void checkAndResetDailyEnergy() {
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo)) {
+        return;
+    }
+    int currentHour = timeinfo.tm_hour; 
+    int currentDay = timeinfo.tm_mday; 
+    if (lastResetDay == -1) {
+        lastResetDay = currentDay;
+    }
+    if (currentDay != lastResetDay && currentHour == 0) {
+        Serial.printf("\n*** DAILY RESET ***: Solar Energy (Prev): %.2f Wh | System Energy (Prev): %.2f Wh\n", solarDailyWh, systemDailyWh);
+        solarDailyWh = 0; 
+        systemDailyWh = 0;
+        lastResetDay = currentDay; 
+        Serial.println("Daily energy tracking (both PZEMs) has been reset to 0 at midnight (00:xx:xx).");
+    }
+}
+
+// Fetch Weather 
+void fetchAndLogData(uint16_t luxA, uint16_t luxB, int motionVal) {
+    if (WiFi.status() != WL_CONNECTED) return;
+    HTTPClient http;
+    String url = weatherURL + "?q=" + city + "&appid=" + apiKey + "&units=metric";
+    http.begin(url);
+    int httpCode = http.GET();
+    if (httpCode > 0) {
+        String payload = http.getString();
+        StaticJsonDocument<2048> doc;
+        if (deserializeJson(doc, payload) == DeserializationError::Ok) {
+            temperature = doc["main"]["temp"].as<float>();
+            cloudiness = doc["clouds"]["all"].as<int>();
+            unsigned long sunriseUTC = doc["sys"]["sunrise"].as<unsigned long>();
+            unsigned long sunsetUTC = doc["sys"]["sunset"].as<unsigned long>();
+            sunriseThai = convertUnixTimeToThaiTime(sunriseUTC);
+            sunsetThai = convertUnixTimeToThaiTime(sunsetUTC);
+        }
+    }
+    http.end();
+
+    // ส่งค่าไปgoogle sheet (app script)
+    HTTPClient sheetHttp;
+    String sheetURL = String(sheetScriptURL) +
+        "?temperature=" + String(temperature, 2) +
+        "&cloudiness=" + String(cloudiness) +
+        "&sunrise=" + urlencode(sunriseThai) +
+        "&sunset=" + urlencode(sunsetThai) +
+        "&luxA=" + String(luxA) +
+        "&luxB=" + String(luxB) +
+        "&motion=" + String(motionVal) +
+        "&volt=" + (isnan(SolarVoltage) ? String("") : String(SolarVoltage, 2)) +
+        "&curr=" + (isnan(SolarCurrent) ? String("") : String(SolarCurrent, 3)) +
+        "&power=" + (isnan(SolarPower) ? String("") : String(SolarPower, 2)) +
+        "&energy=" + (isnan(SolarEnergy) ? String("") : String(SolarEnergy, 2)) +
+        "&volt2=" + (isnan(SystemVoltage) ? String("") : String(SystemVoltage, 2)) +
+        "&curr2=" + (isnan(SystemCurrent) ? String("") : String(SystemCurrent, 3)) +
+        "&power2=" + (isnan(SystemPower) ? String("") : String(SystemPower, 2)) +
+        "&energy2=" + (isnan(SystemEnergy) ? String("") : String(SystemEnergy, 2)) +
+        "&status=" + urlencode(relayStatusText) +
+        "&bulbStatus=" + urlencode(bulbStatusText) +
+        "&currINA219=" + (isnan(INACurrent) ? String("") : String(INACurrent, 3)) +
+        "&anomaly=" + urlencode(anomalyStatusText) +
+        "&solarDailyWh=" + String(solarDailyWh, 2) + 
+        "&systemDailyWh=" + String(systemDailyWh, 2);
+    sheetHttp.begin(sheetURL);
+    int sheetHttpCode = sheetHttp.GET();
+    if (sheetHttpCode > 0)
+        Serial.println("Google Sheets Log success: " + String(sheetHttpCode));
+    else
+        Serial.println("Google Sheets Log failed: " + String(sheetHttpCode));
+    sheetHttp.end();
+}
+
+// SETUP
+void setup() {
+    Serial.begin(115200);
+    Serial.println("--- Integrated Sensor System Setup ---");
+    PZEMSerial.begin(9600, SERIAL_8N2, 16, 17);
+    solarNode.begin(pzemSlaveAddr, PZEMSerial);
+    PZEMSerial2.begin(9600, SERIAL_8N2, 32, 33);
+    systemNode.begin(pzemSlaveAddr2, PZEMSerial2);
+    startMillisPZEM = millis();
+
+    pinMode(motionPin, INPUT);
+    pinMode(relayPin, OUTPUT);
+    digitalWrite(relayPin, LOW);
+    isRelayOn = false;
+    Wire.begin(INA_SDA, INA_SCL);
+    LightSensor_A.begin();
+    LightSensor_B.begin();
+    if (!ina219.begin())
+        Serial.println("❌ Failed to find INA219 chip. Check wiring on pins 21/22!");
+    lastMillis = millis();
+
+    connectToWiFi();
+    Serial.print("Configuring NTP time... ");
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    struct tm timeinfo;
+    if(getLocalTime(&timeinfo)){
+      Serial.printf("Time synchronized: %02d:%02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    } else {
+      Serial.println("Warning: Time synchronization failed. Daily reset may be inaccurate.");
+    }
+    Serial.println("Setup done. System ready.");
+}
+
+// LOOP 
+void loop() {
+    unsigned long currentMillis = millis();
+    connectToWiFi();
+    checkAndResetDailyEnergy();
+
+    uint16_t luxA = LightSensor_A.GetLightIntensity();
+    uint16_t luxB = LightSensor_B.GetLightIntensity();
+
+    int motionVal = digitalRead(motionPin);
+    bool motionDetected = (motionVal == HIGH);
+    if (motionDetected) lastMotionTime = currentMillis;
+
+        bool isDarkEnough = (luxA < LUX_THRESHOLD);
+
+    bool shouldTurnOn = isDarkEnough && motionDetected; 
+    
+    if (shouldTurnOn) {
+        if (!isRelayOn) {
+            digitalWrite(relayPin, HIGH);
+            isRelayOn = true;
+            relayStatusText = "ON";
+        }
+    } else {
+        if (isRelayOn) {
+            digitalWrite(relayPin, LOW);
+            isRelayOn = false;
+            relayStatusText = "OFF";
+        }
+    }
+
+    if (currentMillis - lastSheetLogMillis >= sheetLogPeriod) {
+        lastSheetLogMillis = currentMillis;
+        fetchAndLogData(luxA, luxB, motionVal);
+    }
+
+    if (currentMillis - startMillisPZEM >= periodPZEM) {
+        uint8_t result = solarNode.readInputRegisters(0x0000, 6);
+        if (result == solarNode.ku8MBSuccess) {
+            uint32_t tempdouble = (solarNode.getResponseBuffer(0x0003) << 16) + solarNode.getResponseBuffer(0x0002);
+            SolarVoltage = solarNode.getResponseBuffer(0x0000) / 100.0;
+            SolarCurrent = solarNode.getResponseBuffer(0x0001) / 100.0;
+            SolarPower = tempdouble / 10.0;
+            tempdouble = (solarNode.getResponseBuffer(0x0005) << 16) + solarNode.getResponseBuffer(0x0004);
+            SolarEnergy = tempdouble; 
+            
+            if (SolarVoltage < 7.0) { 
+                SolarVoltage = 0.0;
+                SolarCurrent = 0.0;
+                SolarPower = 0.0;
+            }
+        } else {
+            SolarVoltage = 0.0;
+            SolarCurrent = 0.0;
+            SolarPower = 0.0;
+            SolarEnergy = NAN; 
+        }
+
+        uint8_t result2 = systemNode.readInputRegisters(0x0000, 6);
+        if (result2 == systemNode.ku8MBSuccess) {
+            uint32_t tempdouble2 = (systemNode.getResponseBuffer(0x0003) << 16) + systemNode.getResponseBuffer(0x0002);
+            SystemVoltage = systemNode.getResponseBuffer(0x0000) / 100.0;
+            SystemCurrent = systemNode.getResponseBuffer(0x0001) / 100.0;
+            SystemPower = tempdouble2 / 10.0;
+            tempdouble2 = (systemNode.getResponseBuffer(0x0005) << 16) + systemNode.getResponseBuffer(0x0004);
+            SystemEnergy = tempdouble2; 
+        } else {
+            SystemVoltage = SystemCurrent = SystemPower = SystemEnergy = NAN;
+        }
+        startMillisPZEM = currentMillis;
+    }
+    
+    float ina_bus_v = ina219.getBusVoltage_V();
+    float INALoadVoltage, INAPower, INAShuntVoltage;
+    if (!isnan(ina_bus_v)) {
+        INAShuntVoltage = ina219.getShuntVoltage_mV();
+        INACurrent = ina219.getCurrent_mA() / 1000.0;
+        INAPower = ina219.getPower_mW() / 1000.0;
+        INALoadVoltage = ina_bus_v - (INAShuntVoltage / 1000.0);
+    } else {
+        INACurrent = INAPower = INALoadVoltage = NAN;
+    }
+    
+    if (!isnan(INACurrent) && INACurrent > INA_BULB_CURRENT_THRESHOLD) bulbStatusText = "ON";
+    else bulbStatusText = "OFF";
+    anomalyStatusText = checkLoadAnomaly(INACurrent, luxB);
+
+    if (lastMillis > 0) {
+        float hours = (currentMillis - lastMillis) / 3600000.0;
+        if (!isnan(SolarPower)) {
+            solarDailyWh += SolarPower * hours;
+        }
+        if (!isnan(SystemPower)) {
+            systemDailyWh += SystemPower * hours;
+        }
+    }
+    lastMillis = currentMillis;
+
+
+
+    if (currentMillis - lastSerialPrintMillis >= serialPrintPeriod) {
+        lastSerialPrintMillis = currentMillis;
+        long timeRemaining = 0;
+        bool isHolding = false;
+
+        Serial.println("----------------------------------------");
+        struct tm timeinfo;
+        if(getLocalTime(&timeinfo)){ 
+            Serial.printf("Time: %02d:%02d:%02d | Date: %02d/%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon + 1);
+        }
+        if (isnan(SolarVoltage)) Serial.println("PZEM (Solar): no data");
+        else Serial.printf("PZEM (Solar) V: %.2f V | I: %.2f A | P: %.2f W | Energy: %.2f Wh\n", SolarVoltage, SolarCurrent, SolarPower, SolarEnergy);
+        if (isnan(SystemVoltage)) Serial.println("PZEM (System): no data");
+        else Serial.printf("PZEM (System) V: %.2f V | I: %.2f A | P: %.2f W | Energy: %.2f Wh\n", SystemVoltage, SystemCurrent, SystemPower, SystemEnergy);
+        Serial.printf("INA219 I: %s A | P: %s W | Bulb Status: %s\n",
+            isnan(INACurrent) ? "N/A" : String(INACurrent,3).c_str(),
+            isnan(INAPower) ? "N/A" : String(INAPower,3).c_str(),
+            bulbStatusText.c_str());
+        Serial.printf("Lux A (Ctrl): %u | Lux B (Mntr): %u\n", luxA, luxB);
+        Serial.printf("Temp: %.2f °C | Clouds: %d%% | Sunrise: %s | Sunset: %s\n",
+            temperature, cloudiness, sunriseThai.c_str(), sunsetThai.c_str());
+        Serial.printf("Motion: %s | Relay: %s (Control: LuxA < %u AND Motion == HIGH)\n",
+         motionDetected ? "DETECTED" : "NONE", relayStatusText.c_str(), LUX_THRESHOLD);
+        Serial.printf(">>> Daily Solar Energy: %.2f Wh | Daily System Energy: %.2f Wh\n", solarDailyWh, systemDailyWh); 
+        Serial.printf(">>> ANOMALY CHECK (LuxB/I): %s (Ratio: %.2f)\n", anomalyStatusText.c_str(), (INACurrent > 0.01) ? ((float)luxB / INACurrent) : 0.0);
+     }
+}

@@ -1,0 +1,81 @@
+function doGet(e) {
+  // === เชื่อมกับ Spreadsheet ===
+  // ตรวจสอบให้แน่ใจว่า ID และชื่อชีตถูกต้อง
+  const sheet = SpreadsheetApp.openById("16WO1PdxHZRGSsDM2JExB7cM6iI3MIkdqmGthp-3g-K8")
+                              .getSheetByName("Sheet1");
+
+  // --- หัวตาราง
+  const headers = [
+    "Timestamp",
+    "Temperature (°C)",
+    "Cloudiness (%)",
+    "Sunrise",
+    "Sunset",
+    "Lux_A (Control)",
+    "Lux_B (Monitor)",      
+    "Motion (PIR)", 
+    // PZEM 1 (0x01) - พลังงานจากแผงโซลาร์
+    "Solar_Voltage (V)",
+    "Solar_Current (A)",
+    "Solar_Power (W)",
+    "Solar_Energy (Wh)", 
+    // PZEM 2 (0x02) - พลังงานที่จ่ายในระบบ (System)
+    "System_Voltage (V)",
+    "System_Current (A)",
+    "System_Power (W)",
+    "System_Energy (Wh)",
+    "Relay Status",
+    "Bulb Status (INA219)",
+    "INA219_Current (A)",
+    "Anomaly Status", 
+        // พลังงานสะสมรายวัน (เพิ่มใหม่)
+    "Solar_Daily_Wh",      
+    "System_Daily_Wh"
+  ];
+
+  // --- ถ้ายังไม่มีหัวตาราง ให้เพิ่ม ---
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+  }
+
+  // --- ดึงค่าจาก ESP32 และจัดเรียงตามหัวตาราง (ต้องตรงกับลำดับ headers) ---
+  const data = [
+    new Date(),
+    e.parameter.temperature || "",
+    e.parameter.cloudiness || "",
+    e.parameter.sunrise || "",
+    e.parameter.sunset || "",
+    e.parameter.luxA || "",
+    e.parameter.luxB || "",
+    e.parameter.motion || "", 
+    
+    // PZEM 1 (0x01)
+    e.parameter.volt || "",    // volt
+    e.parameter.curr || "",    // curr
+    e.parameter.power || "",   // power
+    e.parameter.energy || "",  // energy
+    
+    // PZEM 2 (0x02)
+    e.parameter.volt2 || "",   // volt2 (System Voltage)
+    e.parameter.curr2 || "",   // curr2 (System Current)
+    e.parameter.power2 || "",  // power2 (System Power)
+    e.parameter.energy2 || "", // energy2 (System Energy)
+
+    e.parameter.status || "",
+    e.parameter.bulbStatus || "",
+    e.parameter.currINA219 || "",
+    e.parameter.anomaly || "",
+    
+    // พลังงานสะสมรายวัน (เพิ่มใหม่)
+    e.parameter.solarDailyWh || "", // solarDailyWh
+    e.parameter.systemDailyWh || "" // systemDailyWh 
+  ];
+
+  // --- บันทึกข้อมูลลงแถวใหม่ ---
+  sheet.appendRow(data);
+
+  // --- ตอบกลับ ---
+  return ContentService
+    .createTextOutput("✅ Data received and logged successfully.")
+    .setMimeType(ContentService.MimeType.TEXT);
+}

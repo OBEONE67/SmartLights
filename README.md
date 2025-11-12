@@ -5,6 +5,7 @@ A comprehensive IoT dashboard system for monitoring and controlling solar-powere
 ## 🚀 Features
 
 ### 📊 Real-time Dashboard
+
 - **Live Data Monitoring**: Solar voltage, current, power consumption tracking
 - **Interactive Gauges**: Visual representation of system performance
 - **Historical Charts**: Voltage/current waveforms, power trends, energy consumption
@@ -12,6 +13,7 @@ A comprehensive IoT dashboard system for monitoring and controlling solar-powere
 - **Auto-refresh System**: Continuous data updates every 30 seconds
 
 ### 🔧 System Components
+
 - **ESP32 Microcontroller**: Main hardware controller
 - **Solar Panel Monitoring**: Real-time voltage/current measurement
 - **Environmental Sensors**: Temperature, light intensity, motion detection
@@ -19,6 +21,7 @@ A comprehensive IoT dashboard system for monitoring and controlling solar-powere
 - **Chart.js Visualization**: Professional data visualization
 
 ### ⚡ Smart Features
+
 - **Automatic Light Control**: PIR motion detection and relay switching
 - **Cloud Integration**: Weather data and solar conditions
 - **Energy Efficiency**: Solar power generation vs consumption analysis
@@ -44,24 +47,29 @@ Smart-Lights-Dashboard/
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
+
 - Google Account with Google Sheets access
 - Web browser with JavaScript enabled
 - ESP32 microcontroller (for hardware implementation)
 - Required sensors (DHT22, BH1750, INA219, PIR, ACS712)
 
 ### Quick Start
+
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/smart-lights-dashboard.git
    cd smart-lights-dashboard
    ```
 
 2. **Set up Google Sheets**
+
    - Create a new Google Sheet
    - Import the SmartLights.xlsx template
    - Deploy the Code.gs as a web app
 
 3. **Configure the Dashboard**
+
    - Open Index.html in a web browser
    - Update API endpoints in the JavaScript code
    - Test the connection with your Google Sheet
@@ -74,16 +82,19 @@ Smart-Lights-Dashboard/
 ## 📊 Dashboard Pages
 
 ### 🏠 Main Dashboard
+
 - **Top Cards**: Date/time, temperature, cloudiness, sunrise/sunset times
 - **System Gauges**: Real-time voltage, current, power measurements
 - **Charts**: Solar voltage/current waveforms, power trends, daily energy consumption
 
 ### 📈 Reports & Statistics
+
 - **Data Tables**: Historical readings with filtering options
 - **Export Options**: Download data for analysis
 - **Performance Metrics**: System efficiency calculations
 
 ### 🔔 Notifications & Alerts
+
 - **Anomaly Detection**: Automated system health monitoring
 - **Alert History**: Comprehensive notification tracking
 - **Status Indicators**: Visual system status overview
@@ -91,12 +102,14 @@ Smart-Lights-Dashboard/
 ## 🔧 Technical Specifications
 
 ### Data Collection
+
 - **Sampling Rate**: Every 30 seconds
 - **Data Storage**: Google Sheets cloud storage
 - **API Integration**: RESTful Google Apps Script endpoints
 - **Real-time Updates**: WebSocket-like refresh mechanism
 
 ### Sensor Integration
+
 - **DHT22**: Temperature and humidity monitoring
 - **BH1750**: Light intensity measurement (dual sensors)
 - **INA219**: Precision current/voltage monitoring
@@ -104,6 +117,7 @@ Smart-Lights-Dashboard/
 - **ACS712**: AC current measurement
 
 ### Performance
+
 - **Response Time**: < 2 seconds for data updates
 - **Uptime**: 99.9% availability target
 - **Data Retention**: Unlimited cloud storage
@@ -112,6 +126,7 @@ Smart-Lights-Dashboard/
 ## 🚨 Anomaly Detection System
 
 The system includes intelligent anomaly detection for:
+
 - **Voltage Fluctuations**: Unusual solar panel performance
 - **Current Spikes**: Potential hardware issues
 - **Temperature Extremes**: Environmental monitoring
