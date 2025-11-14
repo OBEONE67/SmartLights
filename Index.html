@@ -2749,20 +2749,23 @@
                 })
                 .getLatestSummary();
 
-            // Get full sheet data for chart grouping
+            // Get filtered sheet data for today only instead of all data
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+            
             google.script.run
                 .withSuccessHandler(data => {
-                    console.log('✅ Sheet data loaded for charts:', data ? data.length : 0, 'rows');
+                    console.log('✅ Today\'s data loaded for charts:', data ? data.length : 0, 'rows');
 
                     if (!data || !data.length) {
-                        console.warn('No sheet data for chart');
+                        console.warn('No sheet data for today');
                         drawWaveChart({ labels: [], voltage: [], current: [] });
                         drawPowerChart({ labels: [], power: [] });
                         drawEnergyChart({ labels: [], energy: [] });
                         return;
                     }
 
-                    // Group by hour 0..24
+                    // Group by hour 0..24 for today's data only
                     const groups = {};
                     for (let i = 0; i < 24; i++) {
                         groups[i] = {
@@ -2851,7 +2854,7 @@
                     drawPowerChart({ labels: [], power: [] });
                     drawEnergyChart({ labels: [], energy: [] });
                 })
-                .getSheetData();
+                .getFilteredSheetData(todayString, todayString);
         }
 
         // ========== HELPER FUNCTIONS ==========
@@ -4052,10 +4055,8 @@
             // Auto-hide info banner after 10 seconds
             autoHideInfoBanner();
 
-            // Initialize charts with default date range after a short delay
-            setTimeout(() => {
-                refreshAllCharts(); // Use combined function instead of individual ones
-            }, 2000);
+            // Charts will be loaded with today's data in loadDashboard()
+            // No need to call refreshAllCharts() again
 
             // Initialize row count for first time
             google.script.run
