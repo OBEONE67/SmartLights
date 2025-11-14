@@ -1830,7 +1830,7 @@
         const COL_SYSTEM_DAILY = 'System_Daily_Wh';
 
         // ========== GLOBAL VARIABLES ==========
-        let waveChart, powerChart, energyChart, luxChart, systemPowerChart, systemEnergyChart, gaugeVolt, gaugeCurrent, gaugePower;
+        let waveChart, powerChart, energyChart, gaugeVolt, gaugeCurrent, gaugePower;
 
         // Auto-refresh system variables
         let autoRefreshInterval;
@@ -2368,7 +2368,7 @@
                     labels: series.labels,
                     datasets: [
                         {
-                            label: 'System Power (W)',
+                            label: 'Solar Power (W)',
                             data: series.power,
                             borderColor: 'rgba(147,51,234,0.9)',
                             backgroundColor: 'rgba(147,51,234,0.1)',
@@ -2569,137 +2569,7 @@
             });
         }
 
-        // ========== DRAW LUX CHART FUNCTION ==========
-        function drawLuxChart(series) {
-            const ctx = document.getElementById('luxChart').getContext('2d');
-            if (luxChart) luxChart.destroy();
-
-            luxChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: series.labels,
-                    datasets: [
-                        {
-                            label: 'Lux A',
-                            data: series.luxA,
-                            borderColor: 'rgba(34,197,94,0.9)',
-                            backgroundColor: 'rgba(34,197,94,0.06)',
-                            tension: 0.4,
-                            pointRadius: 2,
-                            fill: true,
-                            pointBackgroundColor: 'rgba(34,197,94,0.9)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2
-                        }
-                    ]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            display: true,
-                            title: { display: true, text: 'Time (hour)' }
-                        },
-                        y: {
-                            display: true,
-                            title: { display: true, text: 'Illuminance Lux A (lx)' },
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ========== DRAW SYSTEM POWER CHART FUNCTION ==========
-        function drawSystemPowerChart(series) {
-            const ctx = document.getElementById('systemPowerChart').getContext('2d');
-            if (systemPowerChart) systemPowerChart.destroy();
-
-            systemPowerChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: series.labels,
-                    datasets: [
-                        {
-                            label: 'System Power (W)',
-                            data: series.systemPower,
-                            borderColor: 'rgba(34,197,94,0.9)',
-                            backgroundColor: 'rgba(34,197,94,0.06)',
-                            tension: 0.4,
-                            pointRadius: 1,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            display: true,
-                            title: { display: true, text: 'Time (hour)' }
-                        },
-                        y: {
-                            display: true,
-                            title: { display: true, text: 'System Power (W)' },
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-        }
-
-        // ========== DRAW SYSTEM ENERGY CHART FUNCTION ==========
-        function drawSystemEnergyChart(series) {
-            const ctx = document.getElementById('systemEnergyChart').getContext('2d');
-            if (systemEnergyChart) systemEnergyChart.destroy();
-
-            systemEnergyChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: series.labels,
-                    datasets: [
-                        {
-                            label: 'System Energy (kWh)',
-                            data: series.systemEnergy,
-                            borderColor: 'rgba(245,158,11,0.9)',
-                            backgroundColor: 'rgba(245,158,11,0.06)',
-                            tension: 0.4,
-                            pointRadius: 1,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            display: true,
-                            title: { display: true, text: 'Time (hour)' }
-                        },
-                        y: {
-                            display: true,
-                            title: { display: true, text: 'System Energy (kWh)' },
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-        }
+        // Removed other charts: only Wave (Voltage/Current), Power (Solar_Power), and Energy (Solar_Daily_Wh) remain.
 
         // ========== LOAD DASHBOARD FUNCTION ==========
         // Fetch and render summary + chart data
@@ -2793,7 +2663,7 @@
 
                         if (!isNaN(v)) groups[h].volt.push(v);
                         if (!isNaN(c)) groups[h].curr.push(c);
-                        if (!isNaN(sysPow)) groups[h].power.push(sysPow);
+                        if (!isNaN(p)) groups[h].power.push(p);
                         if (!isNaN(e)) groups[h].energy.push(e);
                         if (!isNaN(la)) groups[h].luxA.push(la);
                         if (!isNaN(lb)) groups[h].luxB.push(lb);

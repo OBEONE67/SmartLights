@@ -61,12 +61,37 @@ function getSheetData() {
             v = Utilities.formatDate(v, tz, "yyyy-MM-dd'T'HH:mm:ss'Z'");
           }
         }
+        let value;
         if (v === null || v === undefined) {
-          obj[h] = "";
+          value = "";
         } else if (typeof v === "number") {
-          obj[h] = v;
+          value = v;
         } else {
-          obj[h] = String(v).trim();
+          value = String(v).trim();
+        }
+
+        // Assign original header key
+        obj[h] = value;
+
+        // Also add a normalized variant where spaces in the base header
+        // (before any parenthesis) are replaced with underscores. This
+        // ensures consumers that expect keys like "Solar_Power (W)" will
+        // find the value even if the sheet header is "Solar Power (W)".
+        try {
+          const idx = String(h).indexOf(" (");
+          let norm;
+          if (idx !== -1) {
+            const base = String(h).substring(0, idx);
+            const suffix = String(h).substring(idx); // includes leading space
+            norm = base.replace(/\s+/g, "_") + suffix;
+          } else {
+            norm = String(h).replace(/\s+/g, "_");
+          }
+          if (norm && norm !== h && !(norm in obj)) {
+            obj[norm] = value;
+          }
+        } catch (e) {
+          // keep silent — do not add debug logs as requested
         }
       });
       return obj;
@@ -114,15 +139,20 @@ function getFilteredSheetData(fromDate, toDate) {
     // Parse date range
     const startDate = new Date(fromDate);
     const endDate = new Date(toDate);
-    
+
     // Set endDate to end of day
     endDate.setHours(23, 59, 59, 999);
 
-    Logger.log("Parsed date range: " + startDate.toISOString() + " to " + endDate.toISOString());
+    Logger.log(
+      "Parsed date range: " +
+        startDate.toISOString() +
+        " to " +
+        endDate.toISOString()
+    );
 
     // Filter data by date range
-    const filteredData = allData.filter(row => {
-      const timestampField = row['Timestamp'] || row['timestamp'] || '';
+    const filteredData = allData.filter((row) => {
+      const timestampField = row["Timestamp"] || row["timestamp"] || "";
       if (!timestampField) return false;
 
       const rowDate = tryParseDate(timestampField);
@@ -131,9 +161,14 @@ function getFilteredSheetData(fromDate, toDate) {
       return rowDate >= startDate && rowDate <= endDate;
     });
 
-    Logger.log("Filtered data: " + filteredData.length + " rows out of " + allData.length + " total rows");
+    Logger.log(
+      "Filtered data: " +
+        filteredData.length +
+        " rows out of " +
+        allData.length +
+        " total rows"
+    );
     return filteredData;
-
   } catch (error) {
     Logger.log("❌ Error filtering sheet data: " + error.toString());
     Logger.log("Error stack: " + error.stack);
